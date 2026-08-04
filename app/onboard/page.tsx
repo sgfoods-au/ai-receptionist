@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
+import { HeroPortrait } from "@/app/onboard/components/HeroPortrait";
 import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
 
 const LOAN_TYPES = [
@@ -79,17 +79,6 @@ export default function OnboardPage() {
 
   const currentStep = steps[stepIndex];
   const isLastStep = stepIndex === steps.length - 1;
-
-  const mascotMood: MascotMood =
-    scraping || submitting
-      ? "thinking"
-      : result?.success && isLastStep
-        ? "excited"
-        : currentStep === "type" || currentStep === "website"
-          ? "curious"
-          : currentStep === "review"
-            ? "excited"
-            : "happy";
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -217,26 +206,28 @@ export default function OnboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(99,102,241,0.3) 40%, transparent 70%)",
-        }}
-      />
+    <div className="flex min-h-screen flex-col bg-neutral-950 text-white md:flex-row">
+      <div className="h-[32vh] w-full shrink-0 md:sticky md:top-0 md:h-screen md:w-[45%]">
+        <HeroPortrait />
+      </div>
 
-      <main className="relative mx-auto max-w-xl px-6 py-16">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <div className="relative flex-1 overflow-hidden">
+        <div
+          className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(99,102,241,0.3) 40%, transparent 70%)",
+          }}
+        />
+
+        <main className="relative mx-auto max-w-xl px-6 py-10 md:py-16">
+          <div className="mb-6 flex items-center gap-2">
             <span className="text-sm font-medium text-violet-400">Oviflow</span>
             <span className="text-neutral-600">/</span>
             <span className="text-sm text-neutral-500">Setup</span>
           </div>
-          <Mascot mood={mascotMood} />
-        </div>
 
-        <ProgressBar current={stepIndex} total={steps.length} />
+          <ProgressBar current={stepIndex} total={steps.length} />
 
         <div className="mt-10 min-h-[380px]">
             <div key={currentStep} className="animate-step-enter">
@@ -471,7 +462,8 @@ export default function OnboardPage() {
             Go to dashboard
           </button>
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
