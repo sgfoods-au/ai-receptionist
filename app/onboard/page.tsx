@@ -1,13 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
 
 const LOAN_TYPES = [
   { value: "home", label: "Home loans" },
   { value: "refinance", label: "Refinancing" },
-  { value: "investment", label: "Investment property loans" },
+  { value: "investment", label: "Investment property" },
   { value: "commercial", label: "Commercial loans" },
+];
+
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "hi", label: "Hindi" },
 ];
 
 interface FormState {
@@ -43,49 +50,39 @@ const EMPTY_FORM: FormState = {
   },
 };
 
+type StepId = "type" | "website" | "basics" | "details" | "mortgage" | "languages" | "review";
+
+const STEP_TITLES: Record<StepId, string> = {
+  type: "What kind of business?",
+  website: "Got a website?",
+  basics: "The basics",
+  details: "What you offer",
+  mortgage: "Broker details",
+  languages: "Languages",
+  review: "Review & activate",
+};
+
 export default function OnboardPage() {
+  const router = useRouter();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
   const [scraping, setScraping] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  const steps = useMemo<StepId[]>(() => {
+    const base: StepId[] = ["type", "website", "basics", "details"];
+    if (form.industry === "mortgage_broker") base.push("mortgage");
+    base.push("languages", "review");
+    return base;
+  }, [form.industry]);
+
+  const currentStep = steps[stepIndex];
+  const isLastStep = stepIndex === steps.length - 1;
+
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  async function handleScrape() {
-    if (!form.website_url) return;
-    setScraping(true);
-    setResult(null);
-    try {
-      const res = await fetch("/api/scrape", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: form.website_url }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to scrape website.");
-
-      setForm((prev) => ({
-        ...prev,
-        services: data.services || prev.services,
-        business_hours: data.business_hours || prev.business_hours,
-        pricing_info: data.pricing_info || prev.pricing_info,
-        service_area: data.service_area || prev.service_area,
-        faqs: data.faqs?.length ? data.faqs : prev.faqs,
-      }));
-      setResult({
-        success: true,
-        message: "Pre-filled from your website — review and edit before saving.",
-      });
-    } catch (err) {
-      setResult({
-        success: false,
-        message: err instanceof Error ? err.message : "Failed to scrape website.",
-      });
-    } finally {
-      setScraping(false);
-    }
   }
 
   function toggleLanguage(lang: string) {
@@ -119,8 +116,64 @@ export default function OnboardPage() {
     }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleScrape() {
+    if (!form.website_url) return;
+    setScraping(true);
+    setResult(null);
+    try {
+      const res = await fetch("/api/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: form.website_url }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to scrape website.");
+
+      setForm((prev) => ({
+        ...prev,
+        services: data.services || prev.services,
+        business_hours: data.business_hours || prev.business_hours,
+        pricing_info: data.pricing_info || prev.pricing_info,
+        service_area: data.service_area || prev.service_area,
+        faqs: data.faqs?.length ? data.faqs : prev.faqs,
+      }));
+      setResult({
+        success: true,
+        message: "Pre-filled from your website — review and edit as needed.",
+      });
+    } catch (err) {
+      setResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Failed to scrape website.",
+      });
+    } finally {
+      setScraping(false);
+    }
+  }
+
+  function stepIsValid(step: StepId): boolean {
+    if (step === "basics") return form.name.trim().length > 0 && form.business_hours.trim().length > 0;
+    if (step === "details") return form.services.trim().length > 0;
+    return true;
+  }
+
+  function goNext() {
+    if (!stepIsValid(currentStep)) {
+      setResult({ success: false, message: "Please fill in the required fields to continue." });
+      return;
+    }
+    setResult(null);
+    setDirection(1);
+    setStepIndex((i) => Math.min(i + 1, steps.length - 1));
+  }
+
+  function goBack() {
+    setResult(null);
+    setDirection(-1);
+    setStepIndex((i) => Math.max(i - 1, 0));
+  }
+
+  async function handleActivate() {
     setSubmitting(true);
     setResult(null);
     try {
@@ -142,7 +195,7 @@ export default function OnboardPage() {
       setResult({
         success: true,
         message: phone
-          ? `Your AI receptionist is live at ${phone}.`
+          ? `Your Oviflow receptionist is live at ${phone}.`
           : data.error ?? "Business saved.",
       });
     } catch (err) {
@@ -155,192 +208,351 @@ export default function OnboardPage() {
     }
   }
 
+  const variants = {
+    enter: (dir: number) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
+  };
+
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="text-2xl font-semibold mb-2">Set up your AI receptionist</h1>
-      <p className="text-sm text-neutral-500 mb-8">
-        Tell us about your business so your AI receptionist can answer calls
-        accurately. Call summaries will be emailed to your account email. If
-        you have a website, we can pre-fill this form for you.
-      </p>
+    <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden">
+      <div
+        className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(99,102,241,0.3) 40%, transparent 70%)",
+        }}
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Field label="Business type">
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="industry"
-                checked={form.industry === "other"}
-                onChange={() => update("industry", "other")}
-              />
-              Other business
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="industry"
-                checked={form.industry === "mortgage_broker"}
-                onChange={() => update("industry", "mortgage_broker")}
-              />
-              Mortgage broker
-            </label>
-          </div>
-        </Field>
-
-        <div className="flex gap-2">
-          <input
-            type="url"
-            placeholder="https://yourbusiness.com"
-            value={form.website_url}
-            onChange={(e) => update("website_url", e.target.value)}
-            className="flex-1 border rounded px-3 py-2"
-          />
-          <button
-            type="button"
-            onClick={handleScrape}
-            disabled={!form.website_url || scraping}
-            className="px-4 py-2 rounded bg-neutral-800 text-white disabled:opacity-50"
-          >
-            {scraping ? "Reading site..." : "Pre-fill from website"}
-          </button>
+      <main className="relative mx-auto max-w-xl px-6 py-16">
+        <div className="mb-10 flex items-center gap-2">
+          <span className="text-sm font-medium text-violet-400">Oviflow</span>
+          <span className="text-neutral-600">/</span>
+          <span className="text-sm text-neutral-500">Setup</span>
         </div>
 
-        <Field label="Business name" required>
-          <input
-            required
-            value={form.name}
-            onChange={(e) => update("name", e.target.value)}
-            className="w-full border rounded px-3 py-2"
-          />
-        </Field>
+        <ProgressBar current={stepIndex} total={steps.length} />
 
-        <Field label="Your phone (optional)">
-          <input
-            value={form.owner_phone}
-            onChange={(e) => update("owner_phone", e.target.value)}
-            className="w-full border rounded px-3 py-2"
-          />
-        </Field>
+        <div className="mt-10 min-h-[380px]">
+            <motion.div
+              key={currentStep}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              <h1 className="text-2xl font-semibold tracking-tight mb-8">
+                {STEP_TITLES[currentStep]}
+              </h1>
 
-        <Field label="Services offered" required>
-          <textarea
-            required
-            rows={3}
-            value={form.services}
-            onChange={(e) => update("services", e.target.value)}
-            className="w-full border rounded px-3 py-2"
-          />
-        </Field>
+              {currentStep === "type" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <SelectCard
+                    label="Other business"
+                    description="Trades, retail, hospitality, and everything else"
+                    selected={form.industry === "other"}
+                    onClick={() => update("industry", "other")}
+                  />
+                  <SelectCard
+                    label="Mortgage broker"
+                    description="Loan types, lenders, and licensing built in"
+                    selected={form.industry === "mortgage_broker"}
+                    onClick={() => update("industry", "mortgage_broker")}
+                  />
+                </div>
+              )}
 
-        <Field label="Business hours" required>
-          <input
-            required
-            placeholder="Mon-Fri 8am-6pm"
-            value={form.business_hours}
-            onChange={(e) => update("business_hours", e.target.value)}
-            className="w-full border rounded px-3 py-2"
-          />
-        </Field>
-
-        <Field label="Pricing info (optional)">
-          <textarea
-            rows={2}
-            value={form.pricing_info}
-            onChange={(e) => update("pricing_info", e.target.value)}
-            className="w-full border rounded px-3 py-2"
-          />
-        </Field>
-
-        <Field label="Service area (optional)">
-          <input
-            value={form.service_area}
-            onChange={(e) => update("service_area", e.target.value)}
-            className="w-full border rounded px-3 py-2"
-          />
-        </Field>
-
-        {form.industry === "mortgage_broker" && (
-          <div className="space-y-6 border rounded p-4">
-            <h2 className="font-medium text-sm">Mortgage broker details</h2>
-
-            <Field label="Loan types offered">
-              <div className="flex flex-wrap gap-4">
-                {LOAN_TYPES.map((loanType) => (
-                  <label key={loanType.value} className="flex items-center gap-2">
+              {currentStep === "website" && (
+                <div className="space-y-4">
+                  <p className="text-sm text-neutral-400">
+                    We can read your website and pre-fill the next steps automatically.
+                    Optional — you can skip this and fill everything in by hand.
+                  </p>
+                  <div className="flex gap-2">
                     <input
-                      type="checkbox"
-                      checked={form.mortgageBroker.loan_types.includes(loanType.value)}
-                      onChange={() => toggleLoanType(loanType.value)}
+                      type="url"
+                      placeholder="https://yourbusiness.com"
+                      value={form.website_url}
+                      onChange={(e) => update("website_url", e.target.value)}
+                      className={inputClass}
                     />
-                    {loanType.label}
-                  </label>
-                ))}
-              </div>
-            </Field>
+                    <button
+                      type="button"
+                      onClick={handleScrape}
+                      disabled={!form.website_url || scraping}
+                      className="shrink-0 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-40 transition-colors"
+                    >
+                      {scraping ? "Reading..." : "Pre-fill"}
+                    </button>
+                  </div>
+                </div>
+              )}
 
-            <Field label="Lender panel / partner banks">
-              <textarea
-                rows={2}
-                value={form.mortgageBroker.lenders}
-                onChange={(e) => updateMortgageBroker("lenders", e.target.value)}
-                className="w-full border rounded px-3 py-2"
-              />
-            </Field>
+              {currentStep === "basics" && (
+                <div className="space-y-5">
+                  <Field label="Business name" required>
+                    <input
+                      value={form.name}
+                      onChange={(e) => update("name", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Your phone (optional)">
+                    <input
+                      value={form.owner_phone}
+                      onChange={(e) => update("owner_phone", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Business hours" required>
+                    <input
+                      placeholder="Mon-Fri 8am-6pm"
+                      value={form.business_hours}
+                      onChange={(e) => update("business_hours", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                </div>
+              )}
 
-            <Field label="Documents typically required for an application">
-              <textarea
-                rows={2}
-                value={form.mortgageBroker.required_documents}
-                onChange={(e) => updateMortgageBroker("required_documents", e.target.value)}
-                className="w-full border rounded px-3 py-2"
-              />
-            </Field>
+              {currentStep === "details" && (
+                <div className="space-y-5">
+                  <Field label="Services offered" required>
+                    <textarea
+                      rows={3}
+                      value={form.services}
+                      onChange={(e) => update("services", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Pricing info (optional)">
+                    <textarea
+                      rows={2}
+                      value={form.pricing_info}
+                      onChange={(e) => update("pricing_info", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Service area (optional)">
+                    <input
+                      value={form.service_area}
+                      onChange={(e) => update("service_area", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                </div>
+              )}
 
-            <Field label="Licensed/service regions (states/provinces)">
-              <input
-                value={form.mortgageBroker.licensed_regions}
-                onChange={(e) => updateMortgageBroker("licensed_regions", e.target.value)}
-                className="w-full border rounded px-3 py-2"
-              />
-            </Field>
-          </div>
-        )}
+              {currentStep === "mortgage" && (
+                <div className="space-y-5">
+                  <Field label="Loan types offered">
+                    <div className="flex flex-wrap gap-2">
+                      {LOAN_TYPES.map((loanType) => (
+                        <Pill
+                          key={loanType.value}
+                          label={loanType.label}
+                          selected={form.mortgageBroker.loan_types.includes(loanType.value)}
+                          onClick={() => toggleLoanType(loanType.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Lender panel / partner banks">
+                    <textarea
+                      rows={2}
+                      value={form.mortgageBroker.lenders}
+                      onChange={(e) => updateMortgageBroker("lenders", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Documents typically required">
+                    <textarea
+                      rows={2}
+                      value={form.mortgageBroker.required_documents}
+                      onChange={(e) => updateMortgageBroker("required_documents", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Licensed/service regions">
+                    <input
+                      value={form.mortgageBroker.licensed_regions}
+                      onChange={(e) => updateMortgageBroker("licensed_regions", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                </div>
+              )}
 
-        <Field label="Languages">
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={form.languages.includes("en")}
-                onChange={() => toggleLanguage("en")}
-              />
-              English
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={form.languages.includes("hi")}
-                onChange={() => toggleLanguage("hi")}
-              />
-              Hindi
-            </label>
-          </div>
-        </Field>
+              {currentStep === "languages" && (
+                <div className="space-y-2">
+                  <p className="text-sm text-neutral-400 mb-4">
+                    Your AI receptionist will detect the caller&apos;s language and respond in kind.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {LANGUAGES.map((lang) => (
+                      <Pill
+                        key={lang.value}
+                        label={lang.label}
+                        selected={form.languages.includes(lang.value)}
+                        onClick={() => toggleLanguage(lang.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full py-2 rounded bg-blue-600 text-white disabled:opacity-50"
-        >
-          {submitting ? "Saving..." : "Save & activate"}
-        </button>
+              {currentStep === "review" && (
+                <div className="space-y-4">
+                  <ReviewRow label="Business" value={form.name || "—"} />
+                  <ReviewRow
+                    label="Type"
+                    value={form.industry === "mortgage_broker" ? "Mortgage broker" : "Other business"}
+                  />
+                  <ReviewRow label="Hours" value={form.business_hours || "—"} />
+                  <ReviewRow label="Services" value={form.services || "—"} />
+                  <ReviewRow
+                    label="Languages"
+                    value={form.languages.map((l) => LANGUAGES.find((x) => x.value === l)?.label ?? l).join(", ")}
+                  />
+                  <p className="text-sm text-neutral-500 pt-2">
+                    Call summaries will be emailed to your account email.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+        </div>
 
         {result && (
-          <p className={result.success ? "text-green-600" : "text-red-600"}>{result.message}</p>
+          <p
+            className={`mt-6 text-sm ${result.success ? "text-emerald-400" : "text-red-400"}`}
+          >
+            {result.message}
+          </p>
         )}
-      </form>
-    </main>
+
+        <div className="mt-10 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={goBack}
+            disabled={stepIndex === 0}
+            className="text-sm text-neutral-400 hover:text-white disabled:opacity-0 transition-colors"
+          >
+            ← Back
+          </button>
+
+          {isLastStep ? (
+            <button
+              type="button"
+              onClick={handleActivate}
+              disabled={submitting}
+              className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
+            >
+              {submitting ? "Activating..." : "Activate my AI receptionist"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (currentStep === "review") return;
+                goNext();
+              }}
+              className="rounded-lg bg-white px-6 py-2.5 text-sm font-medium text-neutral-950 hover:bg-neutral-200 transition-colors"
+            >
+              Continue →
+            </button>
+          )}
+        </div>
+
+        {result?.success && result.message.includes("live at") && (
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard")}
+            className="mt-6 w-full rounded-lg border border-neutral-800 px-4 py-2.5 text-sm text-neutral-300 hover:bg-neutral-900 transition-colors"
+          >
+            Go to dashboard
+          </button>
+        )}
+      </main>
+    </div>
+  );
+}
+
+const inputClass =
+  "w-full rounded-lg border border-neutral-800 bg-neutral-900/70 px-3.5 py-2.5 text-sm text-white placeholder-neutral-600 outline-none transition-colors focus:border-violet-500";
+
+function ProgressBar({ current, total }: { current: number; total: number }) {
+  return (
+    <div className="flex gap-1.5">
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+            i <= current ? "bg-violet-500" : "bg-neutral-800"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SelectCard({
+  label,
+  description,
+  selected,
+  onClick,
+}: {
+  label: string;
+  description: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl border p-5 text-left transition-all ${
+        selected
+          ? "border-violet-500 bg-violet-500/10 shadow-[0_0_0_1px_rgba(139,92,246,0.4)]"
+          : "border-neutral-800 bg-neutral-900/50 hover:border-neutral-700"
+      }`}
+    >
+      <p className="font-medium text-sm mb-1">{label}</p>
+      <p className="text-xs text-neutral-500">{description}</p>
+    </button>
+  );
+}
+
+function Pill({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+        selected
+          ? "border-violet-500 bg-violet-500/15 text-violet-300"
+          : "border-neutral-800 text-neutral-400 hover:border-neutral-700"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4 border-b border-neutral-900 pb-3">
+      <span className="text-sm text-neutral-500">{label}</span>
+      <span className="text-sm text-right max-w-[65%]">{value}</span>
+    </div>
   );
 }
 
@@ -355,9 +567,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-sm font-medium mb-1">
+      <span className="block text-sm font-medium text-neutral-300 mb-1.5">
         {label}
-        {required && <span className="text-red-500"> *</span>}
+        {required && <span className="text-violet-400"> *</span>}
       </span>
       {children}
     </label>
