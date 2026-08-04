@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
 import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
 
@@ -67,7 +66,6 @@ export default function OnboardPage() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [stepIndex, setStepIndex] = useState(0);
-  const [direction, setDirection] = useState(1);
   const [scraping, setScraping] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -175,13 +173,11 @@ export default function OnboardPage() {
       return;
     }
     setResult(null);
-    setDirection(1);
     setStepIndex((i) => Math.min(i + 1, steps.length - 1));
   }
 
   function goBack() {
     setResult(null);
-    setDirection(-1);
     setStepIndex((i) => Math.max(i - 1, 0));
   }
 
@@ -220,12 +216,6 @@ export default function OnboardPage() {
     }
   }
 
-  const variants = {
-    enter: (dir: number) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
-  };
-
   return (
     <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden">
       <div
@@ -249,14 +239,7 @@ export default function OnboardPage() {
         <ProgressBar current={stepIndex} total={steps.length} />
 
         <div className="mt-10 min-h-[380px]">
-            <motion.div
-              key={currentStep}
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              transition={{ duration: 0.25, ease: "easeOut" }}
-            >
+            <div key={currentStep} className="animate-step-enter">
               <h1 className="text-2xl font-semibold tracking-tight mb-8">
                 {STEP_TITLES[currentStep]}
               </h1>
@@ -435,7 +418,7 @@ export default function OnboardPage() {
                   </p>
                 </div>
               )}
-            </motion.div>
+            </div>
         </div>
 
         {result && (
