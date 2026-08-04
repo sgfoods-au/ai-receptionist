@@ -30,6 +30,8 @@ export async function POST(request: Request) {
       .eq("user_id", user.id)
       .maybeSingle();
 
+    const industry = input.industry === "mortgage_broker" ? "mortgage_broker" : "other";
+
     const { data: saved, error: saveError } = await supabase
       .from("businesses")
       .upsert(
@@ -46,6 +48,8 @@ export async function POST(request: Request) {
           service_area: input.service_area ?? null,
           faqs: input.faqs ?? [],
           languages: input.languages?.length ? input.languages : ["en"],
+          industry,
+          industry_data: industry === "mortgage_broker" ? (input.industry_data ?? null) : null,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }

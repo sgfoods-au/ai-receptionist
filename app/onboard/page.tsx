@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { Faq } from "@/lib/types";
+import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
+
+const LOAN_TYPES = [
+  { value: "home", label: "Home loans" },
+  { value: "refinance", label: "Refinancing" },
+  { value: "investment", label: "Investment property loans" },
+  { value: "commercial", label: "Commercial loans" },
+];
 
 interface FormState {
   name: string;
@@ -13,6 +20,8 @@ interface FormState {
   service_area: string;
   faqs: Faq[];
   languages: string[];
+  industry: Industry;
+  mortgageBroker: MortgageBrokerData;
 }
 
 const EMPTY_FORM: FormState = {
@@ -25,6 +34,13 @@ const EMPTY_FORM: FormState = {
   service_area: "",
   faqs: [],
   languages: ["en"],
+  industry: "other",
+  mortgageBroker: {
+    loan_types: [],
+    lenders: "",
+    required_documents: "",
+    licensed_regions: "",
+  },
 };
 
 export default function OnboardPage() {
@@ -81,15 +97,41 @@ export default function OnboardPage() {
     }));
   }
 
+  function toggleLoanType(loanType: string) {
+    setForm((prev) => ({
+      ...prev,
+      mortgageBroker: {
+        ...prev.mortgageBroker,
+        loan_types: prev.mortgageBroker.loan_types.includes(loanType)
+          ? prev.mortgageBroker.loan_types.filter((l) => l !== loanType)
+          : [...prev.mortgageBroker.loan_types, loanType],
+      },
+    }));
+  }
+
+  function updateMortgageBroker<K extends keyof MortgageBrokerData>(
+    key: K,
+    value: MortgageBrokerData[K]
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      mortgageBroker: { ...prev.mortgageBroker, [key]: value },
+    }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setResult(null);
     try {
+      const { mortgageBroker, ...rest } = form;
       const res = await fetch("/api/onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...rest,
+          industry_data: form.industry === "mortgage_broker" ? mortgageBroker : undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok && res.status !== 202) {
@@ -123,6 +165,29 @@ export default function OnboardPage() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <Field label="Business type">
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="industry"
+                checked={form.industry === "other"}
+                onChange={() => update("industry", "other")}
+              />
+              Other business
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="industry"
+                checked={form.industry === "mortgage_broker"}
+                onChange={() => update("industry", "mortgage_broker")}
+              />
+              Mortgage broker
+            </label>
+          </div>
+        </Field>
+
         <div className="flex gap-2">
           <input
             type="url"
@@ -194,6 +259,53 @@ export default function OnboardPage() {
             className="w-full border rounded px-3 py-2"
           />
         </Field>
+
+        {form.industry === "mortgage_broker" && (
+          <div className="space-y-6 border rounded p-4">
+            <h2 className="font-medium text-sm">Mortgage broker details</h2>
+
+            <Field label="Loan types offered">
+              <div className="flex flex-wrap gap-4">
+                {LOAN_TYPES.map((loanType) => (
+                  <label key={loanType.value} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={form.mortgageBroker.loan_types.includes(loanType.value)}
+                      onChange={() => toggleLoanType(loanType.value)}
+                    />
+                    {loanType.label}
+                  </label>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Lender panel / partner banks">
+              <textarea
+                rows={2}
+                value={form.mortgageBroker.lenders}
+                onChange={(e) => updateMortgageBroker("lenders", e.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+            </Field>
+
+            <Field label="Documents typically required for an application">
+              <textarea
+                rows={2}
+                value={form.mortgageBroker.required_documents}
+                onChange={(e) => updateMortgageBroker("required_documents", e.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+            </Field>
+
+            <Field label="Licensed/service regions (states/provinces)">
+              <input
+                value={form.mortgageBroker.licensed_regions}
+                onChange={(e) => updateMortgageBroker("licensed_regions", e.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+            </Field>
+          </div>
+        )}
 
         <Field label="Languages">
           <div className="flex gap-4">

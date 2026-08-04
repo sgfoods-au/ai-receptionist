@@ -9,13 +9,21 @@ export function buildSystemPrompt(business: Business): string {
   const languages = business.languages?.length ? business.languages : ["en"];
   const speaksHindi = languages.includes("hi");
 
+  const industrySection =
+    business.industry === "mortgage_broker" && business.industry_data
+      ? `\nLoan types offered: ${business.industry_data.loan_types?.length ? business.industry_data.loan_types.join(", ") : "Not specified"}
+Lender panel: ${business.industry_data.lenders || "Not specified"}
+Documents typically required for an application: ${business.industry_data.required_documents || "Not specified"}
+Licensed to operate in: ${business.industry_data.licensed_regions || "Not specified"}\n`
+      : "";
+
   return `You are the AI receptionist for ${business.name}.
 
 Business hours: ${business.business_hours || "Not specified"}
 Services offered: ${business.services || "Not specified"}
 Pricing info: ${business.pricing_info || "Not specified"}
 Service area: ${business.service_area || "Not specified"}
-${faqLines ? `\nFrequently asked questions:\n${faqLines}` : ""}
+${industrySection}${faqLines ? `\nFrequently asked questions:\n${faqLines}` : ""}
 
 Your job on every call:
 1. Greet the caller warmly and find out why they're calling.

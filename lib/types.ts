@@ -3,6 +3,15 @@ export interface Faq {
   answer: string;
 }
 
+export type Industry = "other" | "mortgage_broker";
+
+export interface MortgageBrokerData {
+  loan_types: string[];
+  lenders: string;
+  required_documents: string;
+  licensed_regions: string;
+}
+
 export interface Business {
   id: string;
   user_id: string | null;
@@ -16,6 +25,8 @@ export interface Business {
   service_area: string | null;
   faqs: Faq[] | null;
   languages: string[];
+  industry: Industry;
+  industry_data: MortgageBrokerData | null;
   system_prompt: string | null;
   vapi_assistant_id: string | null;
   vapi_phone_number_id: string | null;
@@ -67,6 +78,8 @@ export interface BusinessOnboardingInput {
   service_area?: string;
   faqs?: Faq[];
   languages?: string[];
+  industry?: Industry;
+  industry_data?: MortgageBrokerData;
 }
 
 export interface ScrapedBusinessInfo {
