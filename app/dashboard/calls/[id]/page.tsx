@@ -1,0 +1,69 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
+import type { Call } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+
+export default async function CallDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await getSupabaseSessionClient();
+  // RLS makes this row invisible (not just filtered) if it belongs to another tenant.
+  const { data: call } = await supabase
+    .from("calls")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!call) notFound();
+
+  const c = call as Call;
+
+  return (
+    <main className="mx-auto max-w-2xl px-6 py-12">
+      <Link href="/dashboard/calls" className="text-sm text-neutral-500 hover:underline">
+        ← Back to call log
+      </Link>
+
+      <h1 className="text-xl font-semibold mt-4 mb-6">
+        Call from {c.caller_number ?? "unknown number"}
+      </h1>
+
+      <dl className="space-y-3 text-sm mb-8">
+        <Row label="Started" value={c.started_at ? new Date(c.started_at).toLocaleString() : "—"} />
+        <Row label="Duration" value={c.duration_seconds ? `${c.duration_seconds}s` : "—"} />
+        <Row label="Language" value={c.language_detected ?? "—"} />
+        <Row label="Urgency" value={c.urgency ?? "—"} />
+        <Row label="Callback requested" value={c.callback_requested ? "Yes" : "No"} />
+        <Row label="Email sent" value={c.email_sent ? "Yes" : "No"} />
+      </dl>
+
+      {c.summary && (
+        <>
+          <h2 className="font-medium mb-2">Summary</h2>
+          <p className="mb-6 whitespace-pre-wrap">{c.summary}</p>
+        </>
+      )}
+
+      {c.transcript && (
+        <>
+          <h2 className="font-medium mb-2">Transcript</h2>
+          <p className="whitespace-pre-wrap text-sm text-neutral-700">{c.transcript}</p>
+        </>
+      )}
+    </main>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between border-b pb-1">
+      <dt className="text-neutral-500">{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}

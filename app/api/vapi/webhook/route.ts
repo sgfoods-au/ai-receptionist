@@ -1,0 +1,139 @@
+import { NextResponse } from "next/server";
+import { getSupabaseServerClient } from "@/lib/supabase/client";
+import { sendCallSummaryEmail } from "@/lib/email/resend";
+import type { Business } from "@/lib/types";
+
+interface VapiCallObject {
+  id?: string;
+  assistantId?: string;
+  phoneNumberId?: string;
+  startedAt?: string;
+  endedAt?: string;
+  customer?: { number?: string };
+}
+
+interface VapiEndOfCallMessage {
+  type?: string;
+  call?: VapiCallObject;
+  summary?: string;
+  analysis?: {
+    summary?: string;
+    successEvaluation?: string;
+    structuredData?: {
+      intent?: string;
+      urgency?: "low" | "medium" | "high";
+      callbackRequested?: boolean;
+      language?: string;
+    };
+  };
+  artifact?: {
+    transcript?: string;
+    messages?: unknown;
+  };
+}
+
+function detectLanguage(transcript: string | undefined): string {
+  if (!transcript) return "en";
+  // Devanagari script range — cheap heuristic fallback if Vapi doesn't surface language.
+  return /[ऀ-ॿ]/.test(transcript) ? "hi" : "en";
+}
+
+// This route is called by Vapi's servers, not a logged-in user — there is no
+// session to bind a Supabase client to. It must keep using the service-role
+// client (getSupabaseServerClient), which bypasses RLS regardless of the
+// policies on businesses/calls. Do not swap this for the session client.
+export async function POST(request: Request) {
+  const expectedSecret = process.env.VAPI_WEBHOOK_SECRET;
+  const receivedSecret =
+    request.headers.get("x-vapi-secret") ?? request.headers.get("x-vapi-signature");
+
+  if (expectedSecret && receivedSecret !== expectedSecret) {
+    return NextResponse.json({ error: "Invalid webhook secret." }, { status: 401 });
+  }
+
+  const rawPayload = await request.json();
+  const message: VapiEndOfCallMessage = rawPayload?.message ?? rawPayload;
+
+  if (message?.type && message.type !== "end-of-call-report") {
+    // Ignore other event types (status-update, function-call, etc.) for MVP.
+    return NextResponse.json({ ok: true, ignored: message.type });
+  }
+
+  const supabase = getSupabaseServerClient();
+  const call = message.call ?? {};
+
+  let business: Business | null = null;
+  if (call.assistantId) {
+    const { data } = await supabase
+      .from("businesses")
+      .select("*")
+      .eq("vapi_assistant_id", call.assistantId)
+      .maybeSingle();
+    business = data as Business | null;
+  }
+  if (!business && call.phoneNumberId) {
+    const { data } = await supabase
+      .from("businesses")
+      .select("*")
+      .eq("vapi_phone_number_id", call.phoneNumberId)
+      .maybeSingle();
+    business = data as Business | null;
+  }
+
+  if (!business) {
+    return NextResponse.json(
+      { error: "No matching business found for this call." },
+      { status: 404 }
+    );
+  }
+
+  const transcript = message.artifact?.transcript;
+  const summary = message.summary ?? message.analysis?.summary ?? null;
+  const structured = message.analysis?.structuredData;
+
+  const { data: insertedCall, error: insertError } = await supabase
+    .from("calls")
+    .insert({
+      business_id: business.id,
+      vapi_call_id: call.id ?? null,
+      caller_number: call.customer?.number ?? null,
+      started_at: call.startedAt ?? null,
+      ended_at: call.endedAt ?? null,
+      duration_seconds:
+        call.startedAt && call.endedAt
+          ? Math.round(
+              (new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000
+            )
+          : null,
+      language_detected: structured?.language ?? detectLanguage(transcript),
+      transcript: transcript ?? null,
+      transcript_json: message.artifact?.messages ?? null,
+      summary,
+      caller_intent: structured?.intent ?? null,
+      urgency: structured?.urgency ?? null,
+      callback_requested: structured?.callbackRequested ?? false,
+      raw_webhook_payload: rawPayload,
+    })
+    .select("*")
+    .single();
+
+  if (insertError || !insertedCall) {
+    return NextResponse.json(
+      { error: insertError?.message ?? "Failed to store call." },
+      { status: 500 }
+    );
+  }
+
+  try {
+    await sendCallSummaryEmail(business, insertedCall);
+    await supabase
+      .from("calls")
+      .update({ email_sent: true, email_sent_at: new Date().toISOString() })
+      .eq("id", insertedCall.id);
+  } catch (err) {
+    // Don't fail the webhook ack over an email delivery problem — the call is already logged.
+    console.error("Failed to send call summary email:", err);
+  }
+
+  return NextResponse.json({ ok: true });
+}
