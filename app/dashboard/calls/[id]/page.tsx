@@ -36,11 +36,32 @@ export default async function CallDetailPage({
       <dl className="space-y-3 text-sm mb-8">
         <Row label="Started" value={c.started_at ? new Date(c.started_at).toLocaleString() : "—"} />
         <Row label="Duration" value={c.duration_seconds ? `${c.duration_seconds}s` : "—"} />
+        <Row label="Cost" value={c.cost != null ? `$${c.cost.toFixed(4)}` : "—"} />
         <Row label="Language" value={c.language_detected ?? "—"} />
         <Row label="Urgency" value={c.urgency ?? "—"} />
         <Row label="Callback requested" value={c.callback_requested ? "Yes" : "No"} />
         <Row label="Email sent" value={c.email_sent ? "Yes" : "No"} />
       </dl>
+
+      {c.cost_breakdown && (
+        <>
+          <h2 className="font-medium mb-2">Cost breakdown</h2>
+          <dl className="space-y-1 text-sm mb-8">
+            {c.cost_breakdown.stt != null && (
+              <Row label="Speech-to-text" value={`$${c.cost_breakdown.stt.toFixed(4)}`} />
+            )}
+            {c.cost_breakdown.llm != null && (
+              <Row label="LLM" value={`$${c.cost_breakdown.llm.toFixed(4)}`} />
+            )}
+            {c.cost_breakdown.tts != null && (
+              <Row label="Text-to-speech" value={`$${c.cost_breakdown.tts.toFixed(4)}`} />
+            )}
+            {c.cost_breakdown.vapi != null && (
+              <Row label="Vapi platform" value={`$${c.cost_breakdown.vapi.toFixed(4)}`} />
+            )}
+          </dl>
+        </>
+      )}
 
       {c.summary && (
         <>

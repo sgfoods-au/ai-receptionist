@@ -7,14 +7,18 @@ interface VapiCallObject {
   id?: string;
   assistantId?: string;
   phoneNumberId?: string;
-  startedAt?: string;
-  endedAt?: string;
   customer?: { number?: string };
 }
 
 interface VapiEndOfCallMessage {
   type?: string;
   call?: VapiCallObject;
+  // Vapi puts timing/cost fields on the message itself, not on message.call.
+  startedAt?: string;
+  endedAt?: string;
+  durationSeconds?: number;
+  cost?: number;
+  costBreakdown?: import("@/lib/types").CallCostBreakdown;
   summary?: string;
   analysis?: {
     summary?: string;
@@ -97,14 +101,17 @@ export async function POST(request: Request) {
       business_id: business.id,
       vapi_call_id: call.id ?? null,
       caller_number: call.customer?.number ?? null,
-      started_at: call.startedAt ?? null,
-      ended_at: call.endedAt ?? null,
+      started_at: message.startedAt ?? null,
+      ended_at: message.endedAt ?? null,
       duration_seconds:
-        call.startedAt && call.endedAt
-          ? Math.round(
-              (new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000
-            )
-          : null,
+        message.durationSeconds != null
+          ? Math.round(message.durationSeconds)
+          : message.startedAt && message.endedAt
+            ? Math.round(
+                (new Date(message.endedAt).getTime() - new Date(message.startedAt).getTime()) /
+                  1000
+              )
+            : null,
       language_detected: structured?.language ?? detectLanguage(transcript),
       transcript: transcript ?? null,
       transcript_json: message.artifact?.messages ?? null,
@@ -112,6 +119,8 @@ export async function POST(request: Request) {
       caller_intent: structured?.intent ?? null,
       urgency: structured?.urgency ?? null,
       callback_requested: structured?.callbackRequested ?? false,
+      cost: message.cost ?? null,
+      cost_breakdown: message.costBreakdown ?? null,
       raw_webhook_payload: rawPayload,
     })
     .select("*")

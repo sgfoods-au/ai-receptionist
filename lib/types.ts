@@ -42,8 +42,19 @@ export interface Call {
   callback_requested: boolean;
   email_sent: boolean;
   email_sent_at: string | null;
+  cost: number | null;
+  cost_breakdown: CallCostBreakdown | null;
   raw_webhook_payload: unknown;
   created_at: string;
+}
+
+export interface CallCostBreakdown {
+  llm?: number;
+  stt?: number;
+  tts?: number;
+  vapi?: number;
+  transport?: number;
+  total?: number;
 }
 
 export interface BusinessOnboardingInput {
