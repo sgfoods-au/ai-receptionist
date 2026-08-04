@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Receptionist",
+  title: "Oviflow",
   description: "AI phone receptionist for small businesses",
 };
 
