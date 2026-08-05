@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import { CARD, INPUT, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
 
 function LoginForm() {
   const router = useRouter();
@@ -35,41 +36,47 @@ function LoginForm() {
   }
 
   return (
-    <main className="mx-auto max-w-sm px-6 py-16">
-      <h1 className="text-2xl font-semibold mb-6">Log in</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          required
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border rounded px-3 py-2"
-        />
-        <input
-          required
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border rounded px-3 py-2"
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full py-2 rounded bg-blue-600 text-white disabled:opacity-50"
-        >
-          {submitting ? "Logging in..." : "Log in"}
-        </button>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-      </form>
-      <p className="text-sm text-neutral-500 mt-4">
-        Don&apos;t have an account?{" "}
-        <Link href="/signup" className="underline">
-          Sign up
-        </Link>
-      </p>
-    </main>
+    <div className="min-h-screen bg-white text-neutral-900 relative overflow-hidden flex items-center justify-center px-6">
+      <PageGlow />
+      <div className="relative w-full max-w-sm">
+        <div className="text-center mb-8">
+          <span className="text-sm font-semibold tracking-wide text-violet-600">Oviflow</span>
+          <h1 className="text-2xl font-semibold tracking-tight mt-1">Welcome back</h1>
+        </div>
+
+        <div className={`${CARD} animate-fade-in-up`}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              required
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={INPUT}
+            />
+            <input
+              required
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={INPUT}
+            />
+            <button type="submit" disabled={submitting} className={`w-full ${PRIMARY_BTN}`}>
+              {submitting ? "Logging in..." : "Log in"}
+            </button>
+            {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+          </form>
+        </div>
+
+        <p className="text-sm text-neutral-500 mt-6 text-center">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="text-violet-600 font-medium hover:text-violet-700">
+            Sign up
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }
 

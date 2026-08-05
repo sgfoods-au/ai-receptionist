@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Mascot } from "@/app/onboard/components/Mascot";
+import { PageGlow } from "@/app/components/ui";
 
 const FEATURES = [
   {
@@ -10,7 +11,7 @@ const FEATURES = [
   {
     title: "Speaks your customers' language",
     description:
-      "Detects English or Hindi from how the caller talks and responds in kind, automatically, without any setup.",
+      "Detects the caller's language automatically and responds in kind — English, Hindi, and more, without any setup.",
   },
   {
     title: "Learns your business, not a script",
@@ -20,7 +21,7 @@ const FEATURES = [
   {
     title: "Every call, summarized in your inbox",
     description:
-      "Full transcript, a short summary, and the caller's details emailed to you the moment they hang up — so you can call back informed.",
+      "Full transcript, a short summary, and the caller's details emailed and texted to you the moment they hang up — so you can call back informed.",
   },
   {
     title: "Costs you can actually see",
@@ -78,25 +79,19 @@ const INDUSTRIES = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(99,102,241,0.3) 40%, transparent 70%)",
-        }}
-      />
+    <div className="min-h-screen bg-white text-neutral-900 relative overflow-hidden">
+      <PageGlow />
 
       <div className="relative">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-          <span className="text-sm font-medium text-violet-400">Oviflow</span>
+          <span className="text-sm font-semibold tracking-wide text-violet-600">Oviflow</span>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-neutral-400 hover:text-white transition-colors">
+            <Link href="/login" className="text-sm text-neutral-500 hover:text-violet-600 transition-colors">
               Log in
             </Link>
             <Link
               href="/signup"
-              className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-neutral-950 hover:bg-neutral-200 transition-colors"
+              className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/35 hover:-translate-y-0.5 transition-all"
             >
               Get started free
             </Link>
@@ -106,11 +101,11 @@ export default function Home() {
         <main className="mx-auto max-w-6xl px-6">
           {/* Hero */}
           <section className="flex flex-col-reverse items-center gap-10 py-16 md:flex-row md:justify-between md:py-24">
-            <div className="max-w-xl text-center md:text-left">
+            <div className="max-w-xl text-center md:text-left animate-fade-in-up">
               <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
                 Never miss a customer call again
               </h1>
-              <p className="mt-5 text-lg text-neutral-400">
+              <p className="mt-5 text-lg text-neutral-500">
                 Oviflow answers your phone with an AI receptionist that understands your
                 business, talks to your customers, and emails you the details — after hours,
                 mid-job, or whenever you can&apos;t pick up.
@@ -118,19 +113,19 @@ export default function Home() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
                 <Link
                   href="/signup"
-                  className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                  className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all"
                 >
                   Get started free
                 </Link>
                 <Link
                   href="/login"
-                  className="rounded-lg border border-neutral-800 px-6 py-3 text-sm font-medium text-neutral-300 hover:bg-neutral-900 transition-colors"
+                  className="rounded-xl border border-neutral-200 px-6 py-3 text-sm font-medium text-neutral-700 hover:border-violet-200 hover:bg-violet-50 transition-colors"
                 >
                   Log in
                 </Link>
               </div>
             </div>
-            <div className="shrink-0 scale-[2.2] md:scale-[3]">
+            <div className="shrink-0 scale-[2.2] md:scale-[3] animate-soft-float">
               <Mascot mood="happy" />
             </div>
           </section>
@@ -141,8 +136,8 @@ export default function Home() {
               Everything you need, none of the busywork
             </h2>
             <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((feature) => (
-                <FeatureCard key={feature.title} {...feature} />
+              {FEATURES.map((feature, i) => (
+                <FeatureCard key={feature.title} {...feature} delay={i * 60} />
               ))}
             </div>
           </section>
@@ -153,8 +148,8 @@ export default function Home() {
               Live in four steps
             </h2>
             <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {STEPS.map((s) => (
-                <StepCard key={s.step} {...s} />
+              {STEPS.map((s, i) => (
+                <StepCard key={s.step} {...s} delay={i * 80} />
               ))}
             </div>
           </section>
@@ -165,28 +160,30 @@ export default function Home() {
               Built for businesses that live on the phone
             </h2>
             <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
-              {INDUSTRIES.map((ind) => (
-                <IndustryCard key={ind.title} {...ind} />
+              {INDUSTRIES.map((ind, i) => (
+                <IndustryCard key={ind.title} {...ind} delay={i * 80} />
               ))}
             </div>
           </section>
 
           {/* Final CTA */}
           <section className="py-16 md:py-24 text-center">
-            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
-              Ready to stop missing calls?
-            </h2>
-            <p className="mt-3 text-neutral-400">Set up your AI receptionist in minutes.</p>
-            <Link
-              href="/signup"
-              className="mt-8 inline-block rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            >
-              Get started free
-            </Link>
+            <div className="animate-fade-in-up rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 to-indigo-50 p-12 sm:p-16">
+              <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
+                Ready to stop missing calls?
+              </h2>
+              <p className="mt-3 text-neutral-500">Set up your AI receptionist in minutes.</p>
+              <Link
+                href="/signup"
+                className="mt-8 inline-block rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-3 text-sm font-medium text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all"
+              >
+                Get started free
+              </Link>
+            </div>
           </section>
         </main>
 
-        <footer className="border-t border-neutral-900 py-8 text-center text-sm text-neutral-600">
+        <footer className="border-t border-neutral-100 py-8 text-center text-sm text-neutral-400">
           © {new Date().getFullYear()} Oviflow
         </footer>
       </div>
@@ -194,11 +191,22 @@ export default function Home() {
   );
 }
 
-function FeatureCard({ title, description }: { title: string; description: string }) {
+function FeatureCard({
+  title,
+  description,
+  delay,
+}: {
+  title: string;
+  description: string;
+  delay: number;
+}) {
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-6">
-      <p className="font-medium mb-2">{title}</p>
-      <p className="text-sm text-neutral-400">{description}</p>
+    <div
+      style={{ animationDelay: `${delay}ms` }}
+      className="animate-fade-in-up rounded-2xl border border-violet-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-500/10"
+    >
+      <p className="font-semibold text-neutral-900 mb-2">{title}</p>
+      <p className="text-sm text-neutral-500 leading-relaxed">{description}</p>
     </div>
   );
 }
@@ -207,27 +215,43 @@ function StepCard({
   step,
   title,
   description,
+  delay,
 }: {
   step: string;
   title: string;
   description: string;
+  delay: number;
 }) {
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-6">
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-violet-500/15 text-sm font-medium text-violet-300">
+    <div
+      style={{ animationDelay: `${delay}ms` }}
+      className="animate-fade-in-up rounded-2xl border border-violet-100 bg-white p-6 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-500/10"
+    >
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-semibold text-white shadow-md shadow-violet-500/25">
         {step}
       </span>
-      <p className="mt-4 font-medium">{title}</p>
-      <p className="mt-1 text-sm text-neutral-400">{description}</p>
+      <p className="mt-4 font-semibold text-neutral-900">{title}</p>
+      <p className="mt-1 text-sm text-neutral-500 leading-relaxed">{description}</p>
     </div>
   );
 }
 
-function IndustryCard({ title, description }: { title: string; description: string }) {
+function IndustryCard({
+  title,
+  description,
+  delay,
+}: {
+  title: string;
+  description: string;
+  delay: number;
+}) {
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-6 text-center">
-      <p className="font-medium mb-2">{title}</p>
-      <p className="text-sm text-neutral-400">{description}</p>
+    <div
+      style={{ animationDelay: `${delay}ms` }}
+      className="animate-fade-in-up rounded-2xl border border-violet-100 bg-white p-6 text-center transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-500/10"
+    >
+      <p className="font-semibold text-neutral-900 mb-2">{title}</p>
+      <p className="text-sm text-neutral-500 leading-relaxed">{description}</p>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { isAdminEmail } from "@/lib/admin";
 import { getUsdToAudRate, formatAud } from "@/lib/currency";
+import { PageGlow, StatCard, StatusPill } from "@/app/components/ui";
 import type { Business, Call } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -13,12 +14,6 @@ interface BusinessStats {
   totalCostUsd: number;
   lastCallAt: string | null;
 }
-
-const STATUS_STYLES: Record<Business["status"], string> = {
-  active: "bg-emerald-500/15 text-emerald-300",
-  draft: "bg-amber-500/15 text-amber-300",
-  paused: "bg-neutral-500/15 text-neutral-300",
-};
 
 export default async function AdminPage() {
   const sessionClient = await getSupabaseSessionClient();
@@ -60,20 +55,16 @@ export default async function AdminPage() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(99,102,241,0.3) 40%, transparent 70%)",
-        }}
-      />
+    <div className="min-h-screen bg-white text-neutral-900 relative overflow-hidden">
+      <PageGlow />
 
-      <div className="relative mx-auto max-w-6xl px-6 py-12">
-        <span className="text-sm font-medium text-violet-400">Oviflow</span>
-        <h1 className="text-2xl font-semibold tracking-tight mt-1 mb-8">Super admin</h1>
+      <div className="relative mx-auto max-w-6xl px-6 py-10 sm:py-14">
+        <span className="text-sm font-semibold tracking-wide text-violet-600">Oviflow</span>
+        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mt-1 mb-8 sm:mb-10">
+          Super admin
+        </h1>
 
-        <div className="grid grid-cols-2 gap-4 mb-10 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 mb-8 sm:mb-10 sm:grid-cols-5 animate-fade-in-up">
           <StatCard label="Signed up" value={String(allBusinesses.length)} />
           <StatCard label="Active" value={String(activeCount)} />
           <StatCard label="Paying / trialing" value={String(payingCount)} />
@@ -81,74 +72,70 @@ export default async function AdminPage() {
           <StatCard label="Total AI cost" value={formatAud(totalCostUsd, rate)} />
         </div>
 
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 overflow-hidden">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="text-left border-b border-neutral-800 text-neutral-500">
-                <th className="py-3 px-4 font-medium">Business</th>
-                <th className="py-3 px-4 font-medium">Owner</th>
-                <th className="py-3 px-4 font-medium">Status</th>
-                <th className="py-3 px-4 font-medium">Plan</th>
-                <th className="py-3 px-4 font-medium">Signed up</th>
-                <th className="py-3 px-4 font-medium">Calls</th>
-                <th className="py-3 px-4 font-medium">Cost</th>
-                <th className="py-3 px-4 font-medium">Last call</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.map(({ business, callCount, totalCostUsd, lastCallAt }) => (
-                <tr key={business.id} className="border-b border-neutral-900 last:border-0">
-                  <td className="py-3 px-4 whitespace-nowrap">{business.name}</td>
-                  <td className="py-3 px-4 whitespace-nowrap text-neutral-400">
-                    {business.owner_email}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${STATUS_STYLES[business.status]}`}
-                    >
-                      {business.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap text-neutral-400 capitalize">
-                    {business.plan_id
-                      ? `${business.plan_id} (${business.subscription_status})`
-                      : "—"}
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap text-neutral-400">
-                    {new Date(business.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="py-3 px-4">{callCount}</td>
-                  <td className="py-3 px-4 whitespace-nowrap">{formatAud(totalCostUsd, rate)}</td>
-                  <td className="py-3 px-4 whitespace-nowrap text-neutral-400">
-                    {lastCallAt ? new Date(lastCallAt).toLocaleDateString() : "—"}
-                  </td>
+        <div
+          className="rounded-3xl border border-violet-100 bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_40px_-20px_rgba(139,92,246,0.2)] animate-fade-in-up"
+          style={{ animationDelay: "80ms" }}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="text-left border-b border-violet-100 text-neutral-500 bg-violet-50/40">
+                  <th className="py-3 px-4 font-medium">Business</th>
+                  <th className="py-3 px-4 font-medium">Owner</th>
+                  <th className="py-3 px-4 font-medium">Status</th>
+                  <th className="py-3 px-4 font-medium">Plan</th>
+                  <th className="py-3 px-4 font-medium">Signed up</th>
+                  <th className="py-3 px-4 font-medium">Calls</th>
+                  <th className="py-3 px-4 font-medium">Cost</th>
+                  <th className="py-3 px-4 font-medium">Last call</th>
                 </tr>
-              ))}
-              {stats.length === 0 && (
-                <tr>
-                  <td className="py-6 px-4 text-neutral-500" colSpan={8}>
-                    No businesses signed up yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {stats.map(({ business, callCount, totalCostUsd, lastCallAt }) => (
+                  <tr key={business.id} className="border-b border-neutral-100 last:border-0 hover:bg-violet-50/30 transition-colors">
+                    <td className="py-3 px-4 whitespace-nowrap font-medium text-neutral-900">
+                      {business.name}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap text-neutral-500">
+                      {business.owner_email}
+                    </td>
+                    <td className="py-3 px-4">
+                      <StatusPill status={business.status} />
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap text-neutral-500 capitalize">
+                      {business.plan_id
+                        ? `${business.plan_id} (${business.subscription_status})`
+                        : "—"}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap text-neutral-500">
+                      {new Date(business.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4 text-neutral-700">{callCount}</td>
+                    <td className="py-3 px-4 whitespace-nowrap text-neutral-700">
+                      {formatAud(totalCostUsd, rate)}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap text-neutral-500">
+                      {lastCallAt ? new Date(lastCallAt).toLocaleDateString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+                {stats.length === 0 && (
+                  <tr>
+                    <td className="py-6 px-4 text-neutral-500" colSpan={8}>
+                      No businesses signed up yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <p className="mt-4 text-xs text-neutral-600">
+        <p className="mt-4 text-xs text-neutral-400">
           &quot;Signed up&quot; counts every business record, including free trials that
           haven&apos;t converted yet — see the Plan column for actual billing status.
         </p>
       </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-4">
-      <p className="text-xs uppercase tracking-wide text-neutral-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold tracking-tight">{value}</p>
     </div>
   );
 }

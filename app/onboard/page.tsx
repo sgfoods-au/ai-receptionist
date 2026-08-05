@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
 import { SUPPORTED_LANGUAGES } from "@/lib/vapi/languages";
 import { VOICES, DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
+import { CARD, INPUT, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
 import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
 
 const LOAN_TYPES = [
@@ -256,20 +257,14 @@ export default function OnboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(99,102,241,0.3) 40%, transparent 70%)",
-        }}
-      />
+    <div className="min-h-screen bg-white text-neutral-900 relative overflow-hidden">
+      <PageGlow />
 
       <main className="relative mx-auto max-w-xl px-6 py-16">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-violet-400">Oviflow</span>
-            <span className="text-neutral-600">/</span>
+            <span className="text-sm font-semibold tracking-wide text-violet-600">Oviflow</span>
+            <span className="text-neutral-300">/</span>
             <span className="text-sm text-neutral-500">Setup</span>
           </div>
           <Mascot mood={mascotMood} />
@@ -277,9 +272,9 @@ export default function OnboardPage() {
 
         <ProgressBar current={stepIndex} total={steps.length} />
 
-        <div className="mt-10 min-h-[380px]">
+        <div className={`${CARD} mt-8 min-h-[380px]`}>
             <div key={currentStep} className="animate-step-enter">
-              <h1 className="text-2xl font-semibold tracking-tight mb-8">
+              <h1 className="text-2xl font-semibold tracking-tight mb-8 text-neutral-900">
                 {STEP_TITLES[currentStep]}
               </h1>
 
@@ -302,7 +297,7 @@ export default function OnboardPage() {
 
               {currentStep === "website" && (
                 <div className="space-y-4">
-                  <p className="text-sm text-neutral-400">
+                  <p className="text-sm text-neutral-500">
                     We can read your website and pre-fill the next steps automatically.
                     Optional — you can skip this and fill everything in by hand.
                   </p>
@@ -423,7 +418,7 @@ export default function OnboardPage() {
 
               {currentStep === "languages" && (
                 <div className="space-y-2">
-                  <p className="text-sm text-neutral-400 mb-4">
+                  <p className="text-sm text-neutral-500 mb-4">
                     Your AI receptionist will detect the caller&apos;s language and respond in kind.
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -441,7 +436,7 @@ export default function OnboardPage() {
 
               {currentStep === "voice" && (
                 <div className="space-y-2">
-                  <p className="text-sm text-neutral-400 mb-4">
+                  <p className="text-sm text-neutral-500 mb-4">
                     Pick a voice for your AI receptionist — it works across every language you
                     selected.
                   </p>
@@ -456,8 +451,8 @@ export default function OnboardPage() {
                     ))}
                   </div>
 
-                  <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900/50 p-4">
-                    <p className="text-sm font-medium text-neutral-300 mb-1">
+                  <div className="mt-6 rounded-xl border border-neutral-200 bg-violet-50/40 p-4">
+                    <p className="text-sm font-medium text-neutral-800 mb-1">
                       Want to hear it first?
                     </p>
                     <p className="text-xs text-neutral-500 mb-3">
@@ -484,7 +479,7 @@ export default function OnboardPage() {
                     </div>
                     {previewResult && (
                       <p
-                        className={`mt-2 text-xs ${previewResult.success ? "text-emerald-400" : "text-red-400"}`}
+                        className={`mt-2 text-xs ${previewResult.success ? "text-emerald-600" : "text-red-600"}`}
                       >
                         {previewResult.message}
                       </p>
@@ -517,18 +512,18 @@ export default function OnboardPage() {
 
         {result && (
           <p
-            className={`mt-6 text-sm ${result.success ? "text-emerald-400" : "text-red-400"}`}
+            className={`mt-6 text-sm ${result.success ? "text-emerald-600" : "text-red-600"}`}
           >
             {result.message}
           </p>
         )}
 
-        <div className="mt-10 flex items-center justify-between">
+        <div className="mt-6 flex items-center justify-between">
           <button
             type="button"
             onClick={goBack}
             disabled={stepIndex === 0}
-            className="text-sm text-neutral-400 hover:text-white disabled:opacity-0 transition-colors"
+            className="text-sm text-neutral-500 hover:text-violet-600 disabled:opacity-0 transition-colors"
           >
             ← Back
           </button>
@@ -538,7 +533,7 @@ export default function OnboardPage() {
               type="button"
               onClick={handleActivate}
               disabled={submitting}
-              className="rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
+              className={PRIMARY_BTN}
             >
               {submitting ? "Activating..." : "Activate my AI receptionist"}
             </button>
@@ -549,7 +544,7 @@ export default function OnboardPage() {
                 if (currentStep === "review") return;
                 goNext();
               }}
-              className="rounded-lg bg-white px-6 py-2.5 text-sm font-medium text-neutral-950 hover:bg-neutral-200 transition-colors"
+              className="rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 transition-colors"
             >
               Continue →
             </button>
@@ -560,7 +555,7 @@ export default function OnboardPage() {
           <button
             type="button"
             onClick={() => router.push("/dashboard")}
-            className="mt-6 w-full rounded-lg border border-neutral-800 px-4 py-2.5 text-sm text-neutral-300 hover:bg-neutral-900 transition-colors"
+            className="mt-6 w-full rounded-xl border border-neutral-200 px-4 py-2.5 text-sm text-neutral-700 hover:border-violet-200 hover:bg-violet-50 transition-colors"
           >
             Go to dashboard
           </button>
@@ -570,8 +565,7 @@ export default function OnboardPage() {
   );
 }
 
-const inputClass =
-  "w-full rounded-lg border border-neutral-800 bg-neutral-900/70 px-3.5 py-2.5 text-sm text-white placeholder-neutral-600 outline-none transition-colors focus:border-violet-500";
+const inputClass = INPUT;
 
 function ProgressBar({ current, total }: { current: number; total: number }) {
   return (
@@ -580,7 +574,9 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
         <div
           key={i}
           className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-            i <= current ? "bg-violet-500" : "bg-neutral-800"
+            i <= current
+              ? "bg-gradient-to-r from-violet-600 to-indigo-600"
+              : "bg-violet-100"
           }`}
         />
       ))}
@@ -605,11 +601,11 @@ function SelectCard({
       onClick={onClick}
       className={`rounded-xl border p-5 text-left transition-all ${
         selected
-          ? "border-violet-500 bg-violet-500/10 shadow-[0_0_0_1px_rgba(139,92,246,0.4)]"
-          : "border-neutral-800 bg-neutral-900/50 hover:border-neutral-700"
+          ? "border-violet-400 bg-violet-50 shadow-[0_0_0_1px_rgba(139,92,246,0.3)]"
+          : "border-neutral-200 bg-white hover:border-violet-200 hover:bg-violet-50/40"
       }`}
     >
-      <p className="font-medium text-sm mb-1">{label}</p>
+      <p className="font-medium text-sm mb-1 text-neutral-900">{label}</p>
       {description && <p className="text-xs text-neutral-500">{description}</p>}
     </button>
   );
@@ -630,8 +626,8 @@ function Pill({
       onClick={onClick}
       className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
         selected
-          ? "border-violet-500 bg-violet-500/15 text-violet-300"
-          : "border-neutral-800 text-neutral-400 hover:border-neutral-700"
+          ? "border-violet-300 bg-violet-50 text-violet-700"
+          : "border-neutral-200 text-neutral-500 hover:border-violet-200 hover:bg-violet-50/40"
       }`}
     >
       {label}
@@ -641,9 +637,9 @@ function Pill({
 
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-neutral-900 pb-3">
+    <div className="flex justify-between gap-4 border-b border-neutral-100 pb-3 last:border-0">
       <span className="text-sm text-neutral-500">{label}</span>
-      <span className="text-sm text-right max-w-[65%]">{value}</span>
+      <span className="text-sm text-right max-w-[65%] text-neutral-800 font-medium">{value}</span>
     </div>
   );
 }
@@ -659,9 +655,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-sm font-medium text-neutral-300 mb-1.5">
+      <span className="block text-sm font-medium text-neutral-700 mb-1.5">
         {label}
-        {required && <span className="text-violet-400"> *</span>}
+        {required && <span className="text-violet-500"> *</span>}
       </span>
       {children}
     </label>
