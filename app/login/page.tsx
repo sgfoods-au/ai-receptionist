@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
-import { CARD, INPUT, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
+import { CARD, INPUT, Logo, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
 
 function LoginForm() {
   const router = useRouter();
@@ -40,7 +40,7 @@ function LoginForm() {
       <PageGlow />
       <div className="relative w-full max-w-sm">
         <div className="text-center mb-8">
-          <span className="text-sm font-semibold tracking-wide text-violet-600">Oviflow</span>
+          <Logo className="h-9 w-auto mx-auto" />
           <h1 className="text-2xl font-semibold tracking-tight mt-1">Welcome back</h1>
         </div>
 

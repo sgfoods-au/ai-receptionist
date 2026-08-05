@@ -133,3 +133,54 @@ body {
 .animate-soft-float {
   animation: soft-float 5s ease-in-out infinite;
 }
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(30px, -40px);
+  }
+  66% {
+    transform: translate(-25px, 25px);
+  }
+}
+
+.animate-drift {
+  animation: drift 12s ease-in-out infinite;
+}
+
+@keyframes grid-pan {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 64px 64px;
+  }
+}
+
+.animate-grid-pan {
+  animation: grid-pan 24s linear infinite;
+}
+
+@keyframes particle-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.25;
+  }
+  100% {
+    transform: translateY(-140px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.animate-particle-rise {
+  animation: particle-rise 9s ease-in infinite;
+}

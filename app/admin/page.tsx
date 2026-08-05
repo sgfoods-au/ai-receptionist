@@ -3,7 +3,7 @@ import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { isAdminEmail } from "@/lib/admin";
 import { getUsdToAudRate, formatAud } from "@/lib/currency";
-import { PageGlow, StatCard, StatusPill } from "@/app/components/ui";
+import { Logo, PageGlow, StatCard, StatusPill } from "@/app/components/ui";
 import type { Business, Call } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +59,7 @@ export default async function AdminPage() {
       <PageGlow />
 
       <div className="relative mx-auto max-w-6xl px-6 py-10 sm:py-14">
-        <span className="text-sm font-semibold tracking-wide text-violet-600">Oviflow</span>
+        <Logo />
         <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mt-1 mb-8 sm:mb-10">
           Super admin
         </h1>

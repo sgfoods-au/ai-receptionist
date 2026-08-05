@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
 import { SUPPORTED_LANGUAGES } from "@/lib/vapi/languages";
 import { VOICES, DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
-import { CARD, INPUT, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
+import { CARD, INPUT, Logo, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
 import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
 
 const LOAN_TYPES = [
@@ -263,7 +263,7 @@ export default function OnboardPage() {
       <main className="relative mx-auto max-w-xl px-6 py-16">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold tracking-wide text-violet-600">Oviflow</span>
+            <Logo />
             <span className="text-neutral-300">/</span>
             <span className="text-sm text-neutral-500">Setup</span>
           </div>

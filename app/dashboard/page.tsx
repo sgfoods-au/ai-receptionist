@@ -4,6 +4,7 @@ import { SignOutButton } from "@/app/components/SignOutButton";
 import { CallRoutingCard } from "@/app/dashboard/components/CallRoutingCard";
 import { BillingCard } from "@/app/dashboard/components/BillingCard";
 import { AppointmentsCard } from "@/app/dashboard/components/AppointmentsCard";
+import { Logo } from "@/app/components/ui";
 import type { Business } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
       <div className="relative mx-auto max-w-6xl px-6 py-10 sm:py-14">
         <div className="flex items-center justify-between mb-10 sm:mb-14">
           <div>
-            <span className="text-sm font-semibold tracking-wide text-violet-600">Oviflow</span>
+            <Logo />
             <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mt-1">Dashboard</h1>
           </div>
           <SignOutButton />

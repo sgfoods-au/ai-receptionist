@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, type ReactNode } from "react";
 
 export const CARD =
@@ -14,16 +15,71 @@ export const SECONDARY_BTN =
 export const INPUT =
   "w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 outline-none transition-colors focus:border-violet-400 focus:ring-2 focus:ring-violet-100";
 
-/** Full-page white background with a soft violet glow orb — the shared shell for every page. */
+export function Logo({ className = "h-7 w-auto" }: { className?: string }) {
+  return (
+    <Image
+      src="/oviflow-wordmark.png"
+      alt="Oviflow"
+      width={1094}
+      height={245}
+      priority
+      className={className}
+    />
+  );
+}
+
+const PARTICLES = [10, 24, 38, 52, 66, 80, 92];
+
+/** Animated futuristic backdrop shared by every page — a slow-panning dot
+ * grid, several independently drifting violet/indigo glow orbs, and rising
+ * particles. Replaces the old single static glow blob. */
 export function PageGlow() {
   return (
-    <div
-      className="pointer-events-none absolute -top-52 left-1/2 h-[700px] w-[1100px] -translate-x-1/2 rounded-full opacity-60 blur-3xl animate-soft-float"
-      style={{
-        background:
-          "radial-gradient(circle, rgba(139,92,246,0.16) 0%, rgba(99,102,241,0.10) 40%, transparent 70%)",
-      }}
-    />
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0 opacity-40 animate-grid-pan"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(139,92,246,0.18) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+      />
+
+      <div
+        className="absolute -top-52 left-1/2 h-[700px] w-[1100px] -translate-x-1/2 rounded-full opacity-60 blur-3xl animate-drift"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(139,92,246,0.16) 0%, rgba(99,102,241,0.10) 40%, transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute top-1/4 -right-40 h-[500px] w-[500px] rounded-full opacity-50 blur-3xl animate-drift"
+        style={{
+          background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)",
+          animationDuration: "16s",
+          animationDelay: "-4s",
+        }}
+      />
+      <div
+        className="absolute bottom-0 -left-32 h-[420px] w-[420px] rounded-full opacity-40 blur-3xl animate-drift"
+        style={{
+          background: "radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)",
+          animationDuration: "20s",
+          animationDelay: "-9s",
+        }}
+      />
+
+      {PARTICLES.map((left, i) => (
+        <span
+          key={left}
+          className="absolute bottom-0 h-1.5 w-1.5 rounded-full bg-violet-400 animate-particle-rise"
+          style={{
+            left: `${left}%`,
+            animationDuration: `${8 + (i % 4)}s`,
+            animationDelay: `${i * 1.1}s`,
+          }}
+        />
+      ))}
+    </div>
   );
 }
 

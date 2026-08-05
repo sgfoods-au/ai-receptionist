@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Mascot } from "@/app/onboard/components/Mascot";
-import { PageGlow } from "@/app/components/ui";
+import { Logo, PageGlow } from "@/app/components/ui";
 
 const FEATURES = [
   {
@@ -84,7 +84,7 @@ export default function Home() {
 
       <div className="relative">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-          <span className="text-sm font-semibold tracking-wide text-violet-600">Oviflow</span>
+          <Logo />
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-sm text-neutral-500 hover:text-violet-600 transition-colors">
               Log in
