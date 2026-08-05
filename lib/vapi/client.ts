@@ -26,6 +26,28 @@ async function vapiRequest<T>(path: string, init: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/**
+ * Lets the assistant bridge a live call to the owner's real phone when a
+ * caller needs a human — distinct from the pre-call carrier forwarding
+ * (which only applies before the AI ever answers). Omitted when no
+ * owner_phone is on file, since Vapi needs a real number to dial.
+ */
+function transferTools(business: Business) {
+  if (!business.owner_phone) return [];
+  return [
+    {
+      type: "transferCall",
+      destinations: [
+        {
+          type: "number",
+          number: business.owner_phone,
+          message: "Sure, let me get you through to someone now.",
+        },
+      ],
+    },
+  ];
+}
+
 /** Fields common to both create and update: the parts driven by business onboarding data. */
 function businessDrivenFields(business: Business, webhookUrl: string, webhookSecret: string) {
   return {
@@ -35,6 +57,7 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
       provider: "anthropic",
       model: "claude-3-5-sonnet-20241022",
       messages: [{ role: "system", content: buildSystemPrompt(business) }],
+      tools: transferTools(business),
     },
     server: {
       url: webhookUrl,

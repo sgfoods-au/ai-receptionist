@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { createOrUpdateAssistant, findAttachedPhoneNumber } from "@/lib/vapi/client";
+import { toE164Australian } from "@/lib/phone";
 import type { Business, BusinessOnboardingInput } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
           user_id: user.id,
           name: input.name,
           owner_email: user.email,
-          owner_phone: input.owner_phone ?? null,
+          owner_phone: toE164Australian(input.owner_phone),
           website_url: input.website_url ?? null,
           services: input.services,
           business_hours: input.business_hours,

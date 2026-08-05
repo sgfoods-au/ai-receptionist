@@ -9,6 +9,10 @@ export function buildSystemPrompt(business: Business): string {
   const languages = business.languages?.length ? business.languages : ["en"];
   const speaksHindi = languages.includes("hi");
 
+  const transferSection = business.owner_phone
+    ? "\nIf the caller explicitly insists on speaking to a real person, or asks something clearly outside what you can resolve from the information above, offer to transfer them to the owner now using the transferCall tool, rather than just taking a message.\n"
+    : "";
+
   const industrySection =
     business.industry === "mortgage_broker" && business.industry_data
       ? `\nLoan types offered: ${business.industry_data.loan_types?.length ? business.industry_data.loan_types.join(", ") : "Not specified"}
@@ -42,5 +46,6 @@ ${
 
 If the caller asks for something outside what's listed above (e.g. a specific
 quote, scheduling a specific time slot), say that the owner will confirm
-details on callback rather than guessing.`;
+details on callback rather than guessing.
+${transferSection}`;
 }
