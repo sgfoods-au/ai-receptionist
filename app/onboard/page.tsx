@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
 import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
 
 const LOAN_TYPES = [
@@ -78,6 +79,17 @@ export default function OnboardPage() {
 
   const currentStep = steps[stepIndex];
   const isLastStep = stepIndex === steps.length - 1;
+
+  const mascotMood: MascotMood =
+    scraping || submitting
+      ? "thinking"
+      : result?.success && isLastStep
+        ? "excited"
+        : currentStep === "type" || currentStep === "website"
+          ? "curious"
+          : currentStep === "review"
+            ? "excited"
+            : "happy";
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -215,10 +227,13 @@ export default function OnboardPage() {
       />
 
       <main className="relative mx-auto max-w-xl px-6 py-16">
-        <div className="mb-6 flex items-center gap-2">
-          <span className="text-sm font-medium text-violet-400">Oviflow</span>
-          <span className="text-neutral-600">/</span>
-          <span className="text-sm text-neutral-500">Setup</span>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-violet-400">Oviflow</span>
+            <span className="text-neutral-600">/</span>
+            <span className="text-sm text-neutral-500">Setup</span>
+          </div>
+          <Mascot mood={mascotMood} />
         </div>
 
         <ProgressBar current={stepIndex} total={steps.length} />
