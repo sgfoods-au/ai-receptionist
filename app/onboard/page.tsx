@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { HeroPortrait } from "@/app/onboard/components/HeroPortrait";
 import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
 
 const LOAN_TYPES = [
@@ -206,28 +205,23 @@ export default function OnboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-neutral-950 text-white md:flex-row">
-      <div className="h-[32vh] w-full shrink-0 md:sticky md:top-0 md:h-screen md:w-[45%]">
-        <HeroPortrait />
-      </div>
+    <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden">
+      <div
+        className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(99,102,241,0.3) 40%, transparent 70%)",
+        }}
+      />
 
-      <div className="relative flex-1 overflow-hidden">
-        <div
-          className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(99,102,241,0.3) 40%, transparent 70%)",
-          }}
-        />
+      <main className="relative mx-auto max-w-xl px-6 py-16">
+        <div className="mb-6 flex items-center gap-2">
+          <span className="text-sm font-medium text-violet-400">Oviflow</span>
+          <span className="text-neutral-600">/</span>
+          <span className="text-sm text-neutral-500">Setup</span>
+        </div>
 
-        <main className="relative mx-auto max-w-xl px-6 py-10 md:py-16">
-          <div className="mb-6 flex items-center gap-2">
-            <span className="text-sm font-medium text-violet-400">Oviflow</span>
-            <span className="text-neutral-600">/</span>
-            <span className="text-sm text-neutral-500">Setup</span>
-          </div>
-
-          <ProgressBar current={stepIndex} total={steps.length} />
+        <ProgressBar current={stepIndex} total={steps.length} />
 
         <div className="mt-10 min-h-[380px]">
             <div key={currentStep} className="animate-step-enter">
@@ -462,8 +456,7 @@ export default function OnboardPage() {
             Go to dashboard
           </button>
         )}
-        </main>
-      </div>
+      </main>
     </div>
   );
 }
