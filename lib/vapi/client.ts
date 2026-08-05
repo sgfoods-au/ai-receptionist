@@ -100,7 +100,11 @@ function bookAppointmentTools(business: Business, webhookUrl: string, webhookSec
  */
 function businessDrivenFields(business: Business, webhookUrl: string, webhookSecret: string) {
   const languages = business.languages?.length ? business.languages : ["en"];
-  const isMultilingual = languages.length > 1 || languages[0] !== "en";
+  const isMultilingual = languages.length > 1;
+  // A single non-English language is transcribed directly in that language
+  // (more reliable than forcing "multi" code-switching mode for a language
+  // that isn't in Deepgram's confirmed code-switching set, e.g. Tamil/Telugu).
+  const transcriberLanguage = isMultilingual ? "multi" : languages[0];
 
   return {
     name: business.name,
@@ -116,12 +120,12 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
       // language lets one voice handle every selected language.
       provider: "vapi",
       voiceId: business.voice_id || DEFAULT_VOICE_ID,
-      language: isMultilingual ? "auto" : "en",
+      language: isMultilingual ? "auto" : languages[0],
     },
     transcriber: {
       provider: "deepgram",
       model: "nova-3",
-      language: isMultilingual ? "multi" : "en",
+      language: transcriberLanguage,
     },
     server: {
       url: webhookUrl,
@@ -238,6 +242,49 @@ export async function importTwilioNumber(
 /** Detaches/deletes a phone number from Vapi, e.g. when replacing it with a different number. */
 export async function releaseVapiNumber(phoneNumberId: string): Promise<void> {
   await vapiRequest<void>(`/phone-number/${phoneNumberId}`, { method: "DELETE" });
+}
+
+/**
+ * Places a short outbound call from the business's own number to let the
+ * owner hear a voice before committing to it, using a transient assistant
+ * (not persisted — just described inline in the call request) that reads
+ * one line and then hangs up.
+ *
+ * NOTE: like other Vapi payload shapes in this file, this could not be
+ * verified live against the real API during development (docs.vapi.ai and
+ * api.vapi.ai were both unreachable from the dev environment). Confirm
+ * against Vapi's actual response the first time this runs for real.
+ */
+export async function previewVoice(
+  phoneNumberId: string,
+  toNumber: string,
+  voiceId: string,
+  businessName: string
+): Promise<void> {
+  await vapiRequest<unknown>("/call", {
+    method: "POST",
+    body: JSON.stringify({
+      phoneNumberId,
+      customer: { number: toNumber },
+      assistant: {
+        name: "Voice preview",
+        firstMessage: `Hi! This is a preview of this voice for ${businessName}'s AI receptionist. This is what your callers will hear. Have a great day!`,
+        model: {
+          provider: "anthropic",
+          model: "claude-3-5-sonnet-20241022",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a brief voice preview. After your first message, say goodbye and end the call using the endCall function — don't have a real conversation.",
+            },
+          ],
+        },
+        voice: { provider: "vapi", voiceId, language: "en" },
+        endCallFunctionEnabled: true,
+      },
+    }),
+  });
 }
 
 /**

@@ -79,6 +79,11 @@ export default function OnboardPage() {
   const [scraping, setScraping] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [previewNumber, setPreviewNumber] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewResult, setPreviewResult] = useState<{ success: boolean; message: string } | null>(
+    null
+  );
 
   const steps = useMemo<StepId[]>(() => {
     const base: StepId[] = ["type", "website", "basics", "details"];
@@ -134,6 +139,30 @@ export default function OnboardPage() {
       ...prev,
       mortgageBroker: { ...prev.mortgageBroker, [key]: value },
     }));
+  }
+
+  async function handlePreviewCall() {
+    const number = previewNumber || form.owner_phone;
+    if (!number) return;
+    setPreviewLoading(true);
+    setPreviewResult(null);
+    try {
+      const res = await fetch("/api/vapi/voice-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voiceId: form.voice_id, phoneNumber: number }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to start preview call.");
+      setPreviewResult({ success: true, message: "Calling you now — answer to hear the voice!" });
+    } catch (err) {
+      setPreviewResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Failed to start preview call.",
+      });
+    } finally {
+      setPreviewLoading(false);
+    }
   }
 
   async function handleScrape() {
@@ -425,6 +454,41 @@ export default function OnboardPage() {
                         onClick={() => update("voice_id", voice.id)}
                       />
                     ))}
+                  </div>
+
+                  <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900/50 p-4">
+                    <p className="text-sm font-medium text-neutral-300 mb-1">
+                      Want to hear it first?
+                    </p>
+                    <p className="text-xs text-neutral-500 mb-3">
+                      We&apos;ll call your phone with a short sample of the {form.voice_id} voice.
+                      Only works once your number is connected — finish setup first if this is
+                      your first time.
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="tel"
+                        placeholder={form.owner_phone || "Your phone number"}
+                        value={previewNumber}
+                        onChange={(e) => setPreviewNumber(e.target.value)}
+                        className={inputClass}
+                      />
+                      <button
+                        type="button"
+                        onClick={handlePreviewCall}
+                        disabled={previewLoading || !(previewNumber || form.owner_phone)}
+                        className="shrink-0 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-40 transition-colors"
+                      >
+                        {previewLoading ? "Calling..." : "Call me to preview"}
+                      </button>
+                    </div>
+                    {previewResult && (
+                      <p
+                        className={`mt-2 text-xs ${previewResult.success ? "text-emerald-400" : "text-red-400"}`}
+                      >
+                        {previewResult.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
