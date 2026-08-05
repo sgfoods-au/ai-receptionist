@@ -13,6 +13,10 @@ export function buildSystemPrompt(business: Business): string {
     ? "\nIf the caller explicitly insists on speaking to a real person, or asks something clearly outside what you can resolve from the information above, offer to transfer them to the owner now using the transferCall tool, rather than just taking a message.\n"
     : "";
 
+  const bookingSection = business.google_calendar_connected
+    ? "\nYou can book real appointments on the business's calendar. When a caller wants to schedule something, agree on a specific date, time, and what it's for, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. If the tool reports the slot is taken, ask the caller for another time and try again.\n"
+    : "";
+
   const industrySection =
     business.industry === "mortgage_broker" && business.industry_data
       ? `\nLoan types offered: ${business.industry_data.loan_types?.length ? business.industry_data.loan_types.join(", ") : "Not specified"}
@@ -50,5 +54,5 @@ ${
 If the caller asks for something outside what's listed above (e.g. a specific
 quote, scheduling a specific time slot), say that the owner will confirm
 details on callback rather than guessing.
-${transferSection}`;
+${transferSection}${bookingSection}`;
 }

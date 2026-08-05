@@ -3,6 +3,7 @@ import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { SignOutButton } from "@/app/components/SignOutButton";
 import { CallRoutingCard } from "@/app/dashboard/components/CallRoutingCard";
 import { BillingCard } from "@/app/dashboard/components/BillingCard";
+import { AppointmentsCard } from "@/app/dashboard/components/AppointmentsCard";
 import type { Business } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -91,6 +92,7 @@ export default async function DashboardPage() {
             </div>
 
             <BillingCard business={biz} />
+            <AppointmentsCard business={biz} />
             <CallRoutingCard business={biz} />
           </div>
         )}

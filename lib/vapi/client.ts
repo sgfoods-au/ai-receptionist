@@ -48,6 +48,49 @@ function transferTools(business: Business) {
   ];
 }
 
+/**
+ * Lets the assistant check calendar availability and book a real appointment
+ * when the business has connected Google Calendar. Points at a dedicated
+ * webhook (not the main end-of-call one) since Vapi calls this mid-call.
+ *
+ * NOTE: this tool payload shape (type/function/server) follows Vapi's
+ * documented custom-tool contract, but could not be verified live against a
+ * real assistant during development — docs.vapi.ai was unreachable from
+ * this environment, and mutating a live customer's assistant via ad-hoc
+ * script was blocked. Confirm against Vapi's actual response/error the
+ * first time this runs for real, and adjust field names if needed.
+ */
+function bookAppointmentTools(business: Business, webhookUrl: string, webhookSecret: string) {
+  if (!business.google_calendar_connected) return [];
+  const toolsWebhookUrl = webhookUrl.replace(/\/api\/vapi\/webhook$/, "/api/vapi/tools/book-appointment");
+
+  return [
+    {
+      type: "function",
+      function: {
+        name: "book_appointment",
+        description:
+          "Books an appointment on the business's calendar. Call this once the caller has agreed on a specific date and time — it will confirm if the slot is free and book it, or report that it's taken.",
+        parameters: {
+          type: "object",
+          properties: {
+            startTime: {
+              type: "string",
+              description: "Appointment start time in ISO 8601 format, e.g. 2026-08-10T14:00:00+10:00",
+            },
+            durationMinutes: { type: "number", description: "Length of the appointment in minutes." },
+            customerName: { type: "string" },
+            customerPhone: { type: "string" },
+            notes: { type: "string", description: "What the appointment is for." },
+          },
+          required: ["startTime", "durationMinutes", "customerName"],
+        },
+      },
+      server: { url: toolsWebhookUrl, secret: webhookSecret },
+    },
+  ];
+}
+
 /** Fields common to both create and update: the parts driven by business onboarding data. */
 function businessDrivenFields(business: Business, webhookUrl: string, webhookSecret: string) {
   return {
@@ -57,7 +100,7 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
       provider: "anthropic",
       model: "claude-3-5-sonnet-20241022",
       messages: [{ role: "system", content: buildSystemPrompt(business) }],
-      tools: transferTools(business),
+      tools: [...transferTools(business), ...bookAppointmentTools(business, webhookUrl, webhookSecret)],
     },
     server: {
       url: webhookUrl,

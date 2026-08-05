@@ -40,6 +40,9 @@ export interface Business {
   current_period_end: string | null;
   sms_notifications_enabled: boolean;
   plan_minutes_used_current_period: number;
+  google_calendar_connected: boolean;
+  google_refresh_token: string | null;
+  google_calendar_email: string | null;
   created_at: string;
   updated_at: string;
 }
