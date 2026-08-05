@@ -20,8 +20,8 @@ export function Logo({ className = "h-7 w-auto" }: { className?: string }) {
     <Image
       src="/oviflow-wordmark.png"
       alt="Oviflow"
-      width={981}
-      height={265}
+      width={1015}
+      height={291}
       priority
       className={className}
     />
@@ -29,6 +29,30 @@ export function Logo({ className = "h-7 w-auto" }: { className?: string }) {
 }
 
 const PARTICLES = [10, 24, 38, 52, 66, 80, 92];
+
+/** Extra "rich" layer for the landing/onboarding pages — two crossing sets
+ * of thin violet diagonal lines, drifting in opposite directions, on top
+ * of the standard PageGlow. Opt-in since it's busier than the base pages. */
+export function AnimatedLines() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0 opacity-[0.07] animate-lines-drift"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(45deg, rgba(124,58,237,0.9) 0px, rgba(124,58,237,0.9) 1px, transparent 1px, transparent 40px)",
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-[0.06] animate-lines-drift-reverse"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(-45deg, rgba(99,102,241,0.9) 0px, rgba(99,102,241,0.9) 1px, transparent 1px, transparent 56px)",
+        }}
+      />
+    </div>
+  );
+}
 
 /** Animated futuristic backdrop shared by every page — a slow-panning dot
  * grid, several independently drifting violet/indigo glow orbs, and rising

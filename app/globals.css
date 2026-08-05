@@ -184,3 +184,85 @@ body {
 .animate-particle-rise {
   animation: particle-rise 9s ease-in infinite;
 }
+
+@keyframes lines-drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 200px 200px;
+  }
+}
+
+.animate-lines-drift {
+  animation: lines-drift 18s linear infinite;
+}
+
+@keyframes lines-drift-reverse {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -160px 160px;
+  }
+}
+
+.animate-lines-drift-reverse {
+  animation: lines-drift-reverse 24s linear infinite;
+}
+
+@keyframes ring-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-ring-rotate {
+  animation: ring-rotate 6s linear infinite;
+}
+
+@keyframes ring-rotate-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-ring-rotate-reverse {
+  animation: ring-rotate-reverse 9s linear infinite;
+}
+
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-eq-bounce {
+  animation: eq-bounce 0.9s ease-in-out infinite;
+}
+
+@keyframes core-pulse {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.animate-core-pulse {
+  animation: core-pulse 2.2s ease-in-out infinite;
+}

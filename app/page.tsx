@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Mascot } from "@/app/onboard/components/Mascot";
-import { Logo, PageGlow } from "@/app/components/ui";
+import { AnimatedLines, Logo, PageGlow } from "@/app/components/ui";
 
 const FEATURES = [
   {
@@ -81,6 +81,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white text-neutral-900 relative overflow-hidden">
       <PageGlow />
+      <AnimatedLines />
 
       <div className="relative">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">

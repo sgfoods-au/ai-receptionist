@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
 import { SUPPORTED_LANGUAGES } from "@/lib/vapi/languages";
 import { VOICES, DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
-import { CARD, INPUT, Logo, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
+import { AnimatedLines, CARD, INPUT, Logo, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
 import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
 
 const LOAN_TYPES = [
@@ -259,6 +259,7 @@ export default function OnboardPage() {
   return (
     <div className="min-h-screen bg-white text-neutral-900 relative overflow-hidden">
       <PageGlow />
+      <AnimatedLines />
 
       <main className="relative mx-auto max-w-xl px-6 py-16">
         <div className="mb-6 flex items-center justify-between">
