@@ -31,10 +31,7 @@ export interface Business {
   vapi_assistant_id: string | null;
   vapi_phone_number_id: string | null;
   vapi_phone_number: string | null;
-  call_routing_enabled: boolean;
   ring_seconds: number;
-  twilio_number: string | null;
-  twilio_number_sid: string | null;
   status: "draft" | "active" | "paused";
   created_at: string;
   updated_at: string;

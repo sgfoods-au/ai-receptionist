@@ -4,33 +4,16 @@ import { useState } from "react";
 import type { Business } from "@/lib/types";
 
 export function CallRoutingCard({ business }: { business: Business }) {
-  const [enabled, setEnabled] = useState(business.call_routing_enabled);
-  const [twilioNumber, setTwilioNumber] = useState(business.twilio_number);
   const [ringSeconds, setRingSeconds] = useState(business.ring_seconds);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleEnable() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/twilio/enable-routing", { method: "POST" });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Failed to enable call routing.");
-      setEnabled(body.business.call_routing_enabled);
-      setTwilioNumber(body.business.twilio_number);
-      setRingSeconds(body.business.ring_seconds);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }
+  const aiNumber = business.vapi_phone_number;
 
   async function handleRingSecondsChange(value: number) {
     setRingSeconds(value);
+    setError(null);
     try {
-      const res = await fetch("/api/twilio/enable-routing", {
+      const res = await fetch("/api/business/ring-seconds", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ring_seconds: value }),
@@ -44,52 +27,64 @@ export function CallRoutingCard({ business }: { business: Business }) {
     }
   }
 
+  if (!aiNumber) {
+    return (
+      <div className="border rounded p-4">
+        <p className="font-medium mb-2">Call routing</p>
+        <p className="text-sm text-neutral-500">
+          Your AI receptionist number isn&apos;t connected yet — finish setup first.
+        </p>
+      </div>
+    );
+  }
+
+  const enableCode = `**61*${aiNumber}#`;
+  const disableCode = "##61#";
+
   return (
-    <div className="border rounded p-4 space-y-3">
-      <p className="font-medium">Call routing</p>
+    <div className="border rounded p-4 space-y-4">
+      <div>
+        <p className="font-medium">Call routing</p>
+        <p className="text-sm text-neutral-500 mt-1">
+          Keep giving customers your own number — no new number needed. Set up{" "}
+          <strong>call forwarding on no answer</strong> directly on your phone so unanswered
+          calls fall through to your AI receptionist automatically.
+        </p>
+      </div>
 
-      {!enabled && (
-        <>
-          <p className="text-sm text-neutral-500">
-            Have your own phone ring first. If you don&apos;t answer within a few rings, your AI
-            receptionist picks up automatically. Requires a new phone number (~$1-2/month) for
-            customers to call.
-          </p>
-          {!business.owner_phone && (
-            <p className="text-sm text-amber-600">
-              Add your phone number in setup before enabling this.
-            </p>
-          )}
-          <button
-            onClick={handleEnable}
-            disabled={loading || !business.owner_phone}
-            className="px-4 py-2 rounded bg-blue-600 text-white text-sm disabled:opacity-50"
-          >
-            {loading ? "Enabling..." : "Enable call forwarding"}
-          </button>
-        </>
-      )}
+      <div>
+        <p className="text-sm text-neutral-500">Your AI receptionist number</p>
+        <p className="text-lg font-medium">{aiNumber}</p>
+      </div>
 
-      {enabled && (
-        <>
-          <p className="text-sm text-neutral-500">
-            Give this number to your customers — calls ring {business.owner_phone} first, then
-            your AI receptionist if unanswered.
-          </p>
-          <p className="text-lg font-medium">{twilioNumber}</p>
-          <label className="block text-sm text-neutral-500">
-            Ring for (seconds) before AI picks up
-            <input
-              type="number"
-              min={5}
-              max={60}
-              value={ringSeconds}
-              onChange={(e) => handleRingSecondsChange(Number(e.target.value))}
-              className="mt-1 block w-24 border rounded px-2 py-1"
-            />
-          </label>
-        </>
-      )}
+      <label className="block text-sm text-neutral-500">
+        Ring for (seconds) before forwarding — used to pick a ring count on your phone
+        <input
+          type="number"
+          min={5}
+          max={60}
+          value={ringSeconds}
+          onChange={(e) => handleRingSecondsChange(Number(e.target.value))}
+          className="mt-1 block w-24 border rounded px-2 py-1"
+        />
+      </label>
+
+      <div className="rounded bg-neutral-900/40 border border-neutral-800 p-3 space-y-2">
+        <p className="text-sm font-medium">On your phone&apos;s dialer, call:</p>
+        <p className="font-mono text-base">{enableCode}</p>
+        <p className="text-sm text-neutral-500">
+          This is the standard GSM code for &quot;Call Forward When Unanswered&quot;, supported by
+          most carriers. Your phone should confirm forwarding is on. To turn it off later, dial{" "}
+          <span className="font-mono">{disableCode}</span>.
+        </p>
+        <p className="text-xs text-neutral-600">
+          Exact codes and available ring-count settings vary by carrier and country — if this
+          doesn&apos;t work, check your carrier&apos;s call forwarding settings (often under Phone
+          &gt; Settings &gt; Call Forwarding on iPhone, or your carrier&apos;s app on Android) and
+          forward to the number above &quot;when unanswered&quot; rather than
+          &quot;always&quot;.
+        </p>
+      </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
