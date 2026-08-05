@@ -33,9 +33,16 @@ export interface Business {
   vapi_phone_number: string | null;
   ring_seconds: number;
   status: "draft" | "active" | "paused";
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  plan_id: PlanId | null;
+  subscription_status: string | null;
+  current_period_end: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export type PlanId = "starter" | "growth" | "pro";
 
 export interface Call {
   id: string;

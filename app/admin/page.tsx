@@ -55,6 +55,9 @@ export default async function AdminPage() {
 
   const totalCostUsd = allCalls.reduce((sum, c) => sum + (c.cost ?? 0), 0);
   const activeCount = allBusinesses.filter((b) => b.status === "active").length;
+  const payingCount = allBusinesses.filter((b) =>
+    ["trialing", "active"].includes(b.subscription_status ?? "")
+  ).length;
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden">
@@ -70,9 +73,10 @@ export default async function AdminPage() {
         <span className="text-sm font-medium text-violet-400">Oviflow</span>
         <h1 className="text-2xl font-semibold tracking-tight mt-1 mb-8">Super admin</h1>
 
-        <div className="grid grid-cols-2 gap-4 mb-10 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 mb-10 sm:grid-cols-5">
           <StatCard label="Signed up" value={String(allBusinesses.length)} />
           <StatCard label="Active" value={String(activeCount)} />
+          <StatCard label="Paying / trialing" value={String(payingCount)} />
           <StatCard label="Total calls" value={String(allCalls.length)} />
           <StatCard label="Total AI cost" value={formatAud(totalCostUsd, rate)} />
         </div>
@@ -84,6 +88,7 @@ export default async function AdminPage() {
                 <th className="py-3 px-4 font-medium">Business</th>
                 <th className="py-3 px-4 font-medium">Owner</th>
                 <th className="py-3 px-4 font-medium">Status</th>
+                <th className="py-3 px-4 font-medium">Plan</th>
                 <th className="py-3 px-4 font-medium">Signed up</th>
                 <th className="py-3 px-4 font-medium">Calls</th>
                 <th className="py-3 px-4 font-medium">Cost</th>
@@ -104,6 +109,11 @@ export default async function AdminPage() {
                       {business.status}
                     </span>
                   </td>
+                  <td className="py-3 px-4 whitespace-nowrap text-neutral-400 capitalize">
+                    {business.plan_id
+                      ? `${business.plan_id} (${business.subscription_status})`
+                      : "—"}
+                  </td>
                   <td className="py-3 px-4 whitespace-nowrap text-neutral-400">
                     {new Date(business.created_at).toLocaleDateString()}
                   </td>
@@ -116,7 +126,7 @@ export default async function AdminPage() {
               ))}
               {stats.length === 0 && (
                 <tr>
-                  <td className="py-6 px-4 text-neutral-500" colSpan={7}>
+                  <td className="py-6 px-4 text-neutral-500" colSpan={8}>
                     No businesses signed up yet.
                   </td>
                 </tr>
@@ -126,8 +136,8 @@ export default async function AdminPage() {
         </div>
 
         <p className="mt-4 text-xs text-neutral-600">
-          &quot;Signed up&quot; counts every business record, since there&apos;s no
-          subscription/billing system yet — every signup is currently free.
+          &quot;Signed up&quot; counts every business record, including free trials that
+          haven&apos;t converted yet — see the Plan column for actual billing status.
         </p>
       </div>
     </div>
