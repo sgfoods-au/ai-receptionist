@@ -20,8 +20,8 @@ export function Logo({ className = "h-7 w-auto" }: { className?: string }) {
     <Image
       src="/oviflow-wordmark.png"
       alt="Oviflow"
-      width={1094}
-      height={245}
+      width={981}
+      height={265}
       priority
       className={className}
     />
