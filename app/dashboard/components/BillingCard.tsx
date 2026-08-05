@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PLANS } from "@/lib/stripe/plans";
+import { OVERAGE_RATE_AUD_PER_MIN, PLANS } from "@/lib/stripe/plans";
 import type { Business } from "@/lib/types";
 
 const CARD =
@@ -71,6 +71,33 @@ export function BillingCard({ business }: { business: Business }) {
             </p>
           </div>
         </div>
+
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-neutral-400">Minutes used this period</span>
+            <span className="font-mono text-neutral-300">
+              {Math.round(business.plan_minutes_used_current_period)} / {activePlan.minutesIncluded}
+            </span>
+          </div>
+          <div className="mt-2 h-2 rounded-full bg-neutral-800 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-600"
+              style={{
+                width: `${Math.min(
+                  100,
+                  (business.plan_minutes_used_current_period / activePlan.minutesIncluded) * 100
+                )}%`,
+              }}
+            />
+          </div>
+          {business.plan_minutes_used_current_period > activePlan.minutesIncluded && (
+            <p className="mt-1.5 text-xs text-amber-400">
+              {Math.round(business.plan_minutes_used_current_period - activePlan.minutesIncluded)}{" "}
+              min over — billed at A${OVERAGE_RATE_AUD_PER_MIN.toFixed(2)}/min
+            </p>
+          )}
+        </div>
+
         <button
           onClick={openPortal}
           disabled={loadingPlan === "portal"}

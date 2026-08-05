@@ -39,6 +39,7 @@ export interface Business {
   subscription_status: string | null;
   current_period_end: string | null;
   sms_notifications_enabled: boolean;
+  plan_minutes_used_current_period: number;
   created_at: string;
   updated_at: string;
 }

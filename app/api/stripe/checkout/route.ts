@@ -57,7 +57,11 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+      line_items: [
+        { price: plan.stripePriceId, quantity: 1 },
+        // Metered price — no quantity, Stripe bills it from reported meter usage.
+        { price: plan.overageStripePriceId },
+      ],
       subscription_data: { trial_period_days: 14 },
       success_url: `${appBaseUrl}/dashboard?checkout=success`,
       cancel_url: `${appBaseUrl}/dashboard?checkout=cancelled`,

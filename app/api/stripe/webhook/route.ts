@@ -12,8 +12,23 @@ async function syncSubscription(subscription: Stripe.Subscription) {
   const supabase = getSupabaseServerClient();
   const customerId =
     typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
-  const priceId = subscription.items.data[0]?.price.id;
-  const currentPeriodEnd = subscription.items.data[0]?.current_period_end;
+  // The flat-fee item (not the metered overage item) carries the real price/period.
+  const licensedItem =
+    subscription.items.data.find((item) => item.price.recurring?.usage_type !== "metered") ??
+    subscription.items.data[0];
+  const priceId = licensedItem?.price.id;
+  const currentPeriodEnd = licensedItem?.current_period_end;
+  const newPeriodEndIso = currentPeriodEnd ? new Date(currentPeriodEnd * 1000).toISOString() : null;
+
+  const { data: existing } = await supabase
+    .from("businesses")
+    .select("current_period_end")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+
+  // A billing cycle just rolled over — reset usage counted toward the new period.
+  const isNewPeriod =
+    newPeriodEndIso && existing?.current_period_end && newPeriodEndIso !== existing.current_period_end;
 
   await supabase
     .from("businesses")
@@ -21,9 +36,8 @@ async function syncSubscription(subscription: Stripe.Subscription) {
       stripe_subscription_id: subscription.id,
       plan_id: planIdForPriceId(priceId),
       subscription_status: subscription.status,
-      current_period_end: currentPeriodEnd
-        ? new Date(currentPeriodEnd * 1000).toISOString()
-        : null,
+      current_period_end: newPeriodEndIso,
+      ...(isNewPeriod ? { plan_minutes_used_current_period: 0 } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("stripe_customer_id", customerId);

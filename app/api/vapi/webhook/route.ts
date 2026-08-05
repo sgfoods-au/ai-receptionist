@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { sendCallSummaryEmail } from "@/lib/email/resend";
 import { sendSms } from "@/lib/twilio/sms";
+import { getStripeClient } from "@/lib/stripe/client";
 import type { Business } from "@/lib/types";
 
 interface VapiCallObject {
@@ -175,6 +176,25 @@ export async function POST(request: Request) {
   } catch (err) {
     // Don't fail the webhook ack over an SMS delivery problem — the call is already logged.
     console.error("Failed to send call summary SMS:", err);
+  }
+
+  if (business.stripe_customer_id && insertedCall.duration_seconds) {
+    try {
+      const minutes = insertedCall.duration_seconds / 60;
+      await getStripeClient().billing.meterEvents.create({
+        event_name: "ai_call_minutes",
+        payload: { stripe_customer_id: business.stripe_customer_id, value: String(minutes) },
+      });
+      await supabase
+        .from("businesses")
+        .update({
+          plan_minutes_used_current_period: business.plan_minutes_used_current_period + minutes,
+        })
+        .eq("id", business.id);
+    } catch (err) {
+      // Don't fail the webhook ack over a billing-metering problem — the call is already logged.
+      console.error("Failed to report call minutes to Stripe:", err);
+    }
   }
 
   return NextResponse.json({ ok: true });
