@@ -1,4 +1,4 @@
-import type { Business } from "@/lib/types";
+import type { Business, MortgageBrokerData, RestaurantData } from "@/lib/types";
 
 /** Builds the system prompt fed to the Vapi assistant from a business's onboarding data. */
 export function buildSystemPrompt(business: Business): string {
@@ -17,12 +17,23 @@ export function buildSystemPrompt(business: Business): string {
     ? "\nYou can book real appointments on the business's calendar. When a caller wants to schedule something, agree on a specific date, time, and what it's for, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. If the tool reports the slot is taken, ask the caller for another time and try again.\n"
     : "";
 
-  const industrySection =
-    business.industry === "mortgage_broker" && business.industry_data
-      ? `\nLoan types offered: ${business.industry_data.loan_types?.length ? business.industry_data.loan_types.join(", ") : "Not specified"}
-Lender panel: ${business.industry_data.lenders || "Not specified"}
-Documents typically required for an application: ${business.industry_data.required_documents || "Not specified"}
-Licensed to operate in: ${business.industry_data.licensed_regions || "Not specified"}\n`
+  const mortgageBrokerData =
+    business.industry === "mortgage_broker"
+      ? (business.industry_data as MortgageBrokerData | null)
+      : null;
+  const restaurantData =
+    business.industry === "restaurant" ? (business.industry_data as RestaurantData | null) : null;
+
+  const industrySection = mortgageBrokerData
+    ? `\nLoan types offered: ${mortgageBrokerData.loan_types?.length ? mortgageBrokerData.loan_types.join(", ") : "Not specified"}
+Lender panel: ${mortgageBrokerData.lenders || "Not specified"}
+Documents typically required for an application: ${mortgageBrokerData.required_documents || "Not specified"}
+Licensed to operate in: ${mortgageBrokerData.licensed_regions || "Not specified"}\n`
+    : restaurantData
+      ? `\nDietary options catered for: ${restaurantData.dietary_options?.length ? restaurantData.dietary_options.join(", ") : "Not specified"}
+Menu highlights: ${restaurantData.menu_highlights || "Not specified"}
+Reservation policy: ${restaurantData.reservation_policy || "Not specified"}
+Delivery/takeout options: ${restaurantData.delivery_takeout || "Not specified"}\n`
       : "";
 
   return `You are the AI receptionist for ${business.name}.

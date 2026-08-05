@@ -6,13 +6,22 @@ import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
 import { SUPPORTED_LANGUAGES } from "@/lib/vapi/languages";
 import { VOICES, DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
 import { AnimatedLines, CARD, INPUT, Logo, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
-import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
+import type { Faq, Industry, MortgageBrokerData, RestaurantData } from "@/lib/types";
 
 const LOAN_TYPES = [
   { value: "home", label: "Home loans" },
   { value: "refinance", label: "Refinancing" },
   { value: "investment", label: "Investment property" },
   { value: "commercial", label: "Commercial loans" },
+];
+
+const DIETARY_OPTIONS = [
+  { value: "vegetarian", label: "Vegetarian" },
+  { value: "vegan", label: "Vegan" },
+  { value: "gluten_free", label: "Gluten-free" },
+  { value: "halal", label: "Halal" },
+  { value: "kosher", label: "Kosher" },
+  { value: "dairy_free", label: "Dairy-free" },
 ];
 
 const LANGUAGES = SUPPORTED_LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
@@ -30,6 +39,7 @@ interface FormState {
   voice_id: string;
   industry: Industry;
   mortgageBroker: MortgageBrokerData;
+  restaurant: RestaurantData;
 }
 
 const EMPTY_FORM: FormState = {
@@ -50,6 +60,12 @@ const EMPTY_FORM: FormState = {
     required_documents: "",
     licensed_regions: "",
   },
+  restaurant: {
+    dietary_options: [],
+    menu_highlights: "",
+    reservation_policy: "",
+    delivery_takeout: "",
+  },
 };
 
 type StepId =
@@ -58,6 +74,7 @@ type StepId =
   | "basics"
   | "details"
   | "mortgage"
+  | "restaurant"
   | "languages"
   | "voice"
   | "review";
@@ -68,6 +85,7 @@ const STEP_TITLES: Record<StepId, string> = {
   basics: "The basics",
   details: "What you offer",
   mortgage: "Broker details",
+  restaurant: "Restaurant profile",
   languages: "Languages",
   voice: "Choose a voice",
   review: "Review & activate",
@@ -89,6 +107,7 @@ export default function OnboardPage() {
   const steps = useMemo<StepId[]>(() => {
     const base: StepId[] = ["type", "website", "basics", "details"];
     if (form.industry === "mortgage_broker") base.push("mortgage");
+    if (form.industry === "restaurant") base.push("restaurant");
     base.push("languages", "voice", "review");
     return base;
   }, [form.industry]);
@@ -139,6 +158,25 @@ export default function OnboardPage() {
     setForm((prev) => ({
       ...prev,
       mortgageBroker: { ...prev.mortgageBroker, [key]: value },
+    }));
+  }
+
+  function toggleDietaryOption(option: string) {
+    setForm((prev) => ({
+      ...prev,
+      restaurant: {
+        ...prev.restaurant,
+        dietary_options: prev.restaurant.dietary_options.includes(option)
+          ? prev.restaurant.dietary_options.filter((o) => o !== option)
+          : [...prev.restaurant.dietary_options, option],
+      },
+    }));
+  }
+
+  function updateRestaurant<K extends keyof RestaurantData>(key: K, value: RestaurantData[K]) {
+    setForm((prev) => ({
+      ...prev,
+      restaurant: { ...prev.restaurant, [key]: value },
     }));
   }
 
@@ -225,13 +263,19 @@ export default function OnboardPage() {
     setSubmitting(true);
     setResult(null);
     try {
-      const { mortgageBroker, ...rest } = form;
+      const { mortgageBroker, restaurant, ...rest } = form;
+      const industryData =
+        form.industry === "mortgage_broker"
+          ? mortgageBroker
+          : form.industry === "restaurant"
+            ? restaurant
+            : undefined;
       const res = await fetch("/api/onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...rest,
-          industry_data: form.industry === "mortgage_broker" ? mortgageBroker : undefined,
+          industry_data: industryData,
         }),
       });
       const data = await res.json();
@@ -292,6 +336,12 @@ export default function OnboardPage() {
                     description="Loan types, lenders, and licensing built in"
                     selected={form.industry === "mortgage_broker"}
                     onClick={() => update("industry", "mortgage_broker")}
+                  />
+                  <SelectCard
+                    label="Restaurant"
+                    description="Menu, dietary options, and reservations built in"
+                    selected={form.industry === "restaurant"}
+                    onClick={() => update("industry", "restaurant")}
                   />
                 </div>
               )}
@@ -417,6 +467,49 @@ export default function OnboardPage() {
                 </div>
               )}
 
+              {currentStep === "restaurant" && (
+                <div className="space-y-5">
+                  <Field label="Dietary options catered for">
+                    <div className="flex flex-wrap gap-2">
+                      {DIETARY_OPTIONS.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={form.restaurant.dietary_options.includes(option.value)}
+                          onClick={() => toggleDietaryOption(option.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Menu highlights">
+                    <textarea
+                      rows={2}
+                      placeholder="Signature dishes, popular items, chef's specials"
+                      value={form.restaurant.menu_highlights}
+                      onChange={(e) => updateRestaurant("menu_highlights", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Reservation policy">
+                    <textarea
+                      rows={2}
+                      placeholder="Walk-ins welcome, reservations recommended for groups of 6+"
+                      value={form.restaurant.reservation_policy}
+                      onChange={(e) => updateRestaurant("reservation_policy", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Delivery/takeout options">
+                    <input
+                      placeholder="Pickup, Uber Eats, DoorDash"
+                      value={form.restaurant.delivery_takeout}
+                      onChange={(e) => updateRestaurant("delivery_takeout", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                </div>
+              )}
+
               {currentStep === "languages" && (
                 <div className="space-y-2">
                   <p className="text-sm text-neutral-500 mb-4">
@@ -494,7 +587,13 @@ export default function OnboardPage() {
                   <ReviewRow label="Business" value={form.name || "—"} />
                   <ReviewRow
                     label="Type"
-                    value={form.industry === "mortgage_broker" ? "Mortgage broker" : "Other business"}
+                    value={
+                      form.industry === "mortgage_broker"
+                        ? "Mortgage broker"
+                        : form.industry === "restaurant"
+                          ? "Restaurant"
+                          : "Other business"
+                    }
                   />
                   <ReviewRow label="Hours" value={form.business_hours || "—"} />
                   <ReviewRow label="Services" value={form.services || "—"} />

@@ -31,7 +31,10 @@ export async function POST(request: Request) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const industry = input.industry === "mortgage_broker" ? "mortgage_broker" : "other";
+    const industry =
+      input.industry === "mortgage_broker" || input.industry === "restaurant"
+        ? input.industry
+        : "other";
 
     const { data: saved, error: saveError } = await supabase
       .from("businesses")
@@ -51,7 +54,10 @@ export async function POST(request: Request) {
           languages: input.languages?.length ? input.languages : ["en"],
           voice_id: input.voice_id || "Elliot",
           industry,
-          industry_data: industry === "mortgage_broker" ? (input.industry_data ?? null) : null,
+          industry_data:
+            industry === "mortgage_broker" || industry === "restaurant"
+              ? (input.industry_data ?? null)
+              : null,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }
