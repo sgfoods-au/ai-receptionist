@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
+import { getUsdToAudRate, formatAud } from "@/lib/currency";
 import type { Call } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ export default async function CallsPage() {
     .order("created_at", { ascending: false })
     .limit(100);
 
+  const rate = await getUsdToAudRate();
   const totalCost = (calls as Call[] | null)?.reduce((sum, call) => sum + (call.cost ?? 0), 0) ?? 0;
 
   return (
@@ -21,7 +23,7 @@ export default async function CallsPage() {
         <h1 className="text-2xl font-semibold">Call log</h1>
         {!error && calls && calls.length > 0 && (
           <p className="text-sm text-neutral-500">
-            Total cost (last {calls.length}): ${totalCost.toFixed(4)}
+            Total cost (last {calls.length}): {formatAud(totalCost, rate)}
           </p>
         )}
       </div>
@@ -56,7 +58,7 @@ export default async function CallsPage() {
                   {call.duration_seconds != null ? `${call.duration_seconds}s` : "—"}
                 </td>
                 <td className="py-2 pr-4 whitespace-nowrap">
-                  {call.cost != null ? `$${call.cost.toFixed(4)}` : "—"}
+                  {call.cost != null ? formatAud(call.cost, rate) : "—"}
                 </td>
                 <td className="py-2 pr-4">{call.language_detected ?? "—"}</td>
                 <td className="py-2 pr-4">{call.urgency ?? "—"}</td>
