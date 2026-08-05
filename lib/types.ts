@@ -17,6 +17,8 @@ export interface RestaurantData {
   menu_highlights: string;
   reservation_policy: string;
   delivery_takeout: string;
+  max_covers: number;
+  reservation_duration_minutes: number;
 }
 
 export interface Business {
@@ -89,6 +91,19 @@ export interface CallCostBreakdown {
   vapi?: number;
   transport?: number;
   total?: number;
+}
+
+export interface Reservation {
+  id: string;
+  business_id: string;
+  customer_name: string;
+  customer_phone: string | null;
+  party_size: number;
+  start_time: string;
+  end_time: string;
+  notes: string | null;
+  status: "confirmed" | "cancelled";
+  created_at: string;
 }
 
 export interface BusinessOnboardingInput {

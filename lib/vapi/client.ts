@@ -1,4 +1,4 @@
-import type { Business } from "@/lib/types";
+import type { Business, RestaurantData } from "@/lib/types";
 import { buildSystemPrompt } from "@/lib/vapi/prompt";
 import { DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
 
@@ -93,6 +93,47 @@ function bookAppointmentTools(business: Business, webhookUrl: string, webhookSec
 }
 
 /**
+ * Lets the assistant check table availability and book a real reservation
+ * directly for restaurants that have set their seating capacity — no
+ * external booking platform involved, since none of them expose a
+ * self-serve API (see lib/reservations/availability.ts). Points at a
+ * dedicated webhook (not the main end-of-call one) since Vapi calls this
+ * mid-call, same as bookAppointmentTools.
+ */
+function bookReservationTools(business: Business, webhookUrl: string, webhookSecret: string) {
+  const restaurantData =
+    business.industry === "restaurant" ? (business.industry_data as RestaurantData | null) : null;
+  if (!restaurantData?.max_covers) return [];
+  const toolsWebhookUrl = webhookUrl.replace(/\/api\/vapi\/webhook$/, "/api/vapi/tools/book-reservation");
+
+  return [
+    {
+      type: "function",
+      function: {
+        name: "book_reservation",
+        description:
+          "Books a table reservation directly. Call this once the caller has agreed on a specific date, time, and party size — it will confirm if there's capacity and book it, or report that it's fully booked.",
+        parameters: {
+          type: "object",
+          properties: {
+            startTime: {
+              type: "string",
+              description: "Reservation start time in ISO 8601 format, e.g. 2026-08-10T19:00:00+10:00",
+            },
+            partySize: { type: "number", description: "Number of guests." },
+            customerName: { type: "string" },
+            customerPhone: { type: "string" },
+            notes: { type: "string", description: "Special requests, e.g. dietary needs or occasion." },
+          },
+          required: ["startTime", "partySize", "customerName"],
+        },
+      },
+      server: { url: toolsWebhookUrl, secret: webhookSecret },
+    },
+  ];
+}
+
+/**
  * Fields common to both create and update: the parts driven by business
  * onboarding data, including voice/language — the onboarding UI's voice
  * and language pickers are the source of truth, so these sync on every
@@ -113,7 +154,11 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
       provider: "anthropic",
       model: "claude-3-5-sonnet-20241022",
       messages: [{ role: "system", content: buildSystemPrompt(business) }],
-      tools: [...transferTools(business), ...bookAppointmentTools(business, webhookUrl, webhookSecret)],
+      tools: [
+        ...transferTools(business),
+        ...bookAppointmentTools(business, webhookUrl, webhookSecret),
+        ...bookReservationTools(business, webhookUrl, webhookSecret),
+      ],
     },
     voice: {
       // Vapi's built-in voice provider needs no extra credentials; "auto"

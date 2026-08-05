@@ -4,8 +4,9 @@ import { SignOutButton } from "@/app/components/SignOutButton";
 import { CallRoutingCard } from "@/app/dashboard/components/CallRoutingCard";
 import { BillingCard } from "@/app/dashboard/components/BillingCard";
 import { AppointmentsCard } from "@/app/dashboard/components/AppointmentsCard";
+import { ReservationsCard } from "@/app/dashboard/components/ReservationsCard";
 import { Logo } from "@/app/components/ui";
-import type { Business } from "@/lib/types";
+import type { Business, Reservation } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,19 @@ export default async function DashboardPage() {
     .maybeSingle();
 
   const biz = business as Business | null;
+
+  let reservations: Reservation[] = [];
+  if (biz && biz.industry === "restaurant") {
+    const { data: reservationsData } = await supabase
+      .from("reservations")
+      .select("*")
+      .eq("business_id", biz.id)
+      .eq("status", "confirmed")
+      .gte("start_time", new Date().toISOString())
+      .order("start_time", { ascending: true })
+      .limit(20);
+    reservations = (reservationsData ?? []) as Reservation[];
+  }
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 relative overflow-hidden">
@@ -106,6 +120,12 @@ export default async function DashboardPage() {
                 <CallRoutingCard business={biz} />
               </div>
             </div>
+
+            {biz.industry === "restaurant" && (
+              <div style={{ animationDelay: "240ms" }} className="animate-fade-in-up">
+                <ReservationsCard business={biz} reservations={reservations} />
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -65,6 +65,8 @@ const EMPTY_FORM: FormState = {
     menu_highlights: "",
     reservation_policy: "",
     delivery_takeout: "",
+    max_covers: 0,
+    reservation_duration_minutes: 90,
   },
 };
 
@@ -499,6 +501,32 @@ export default function OnboardPage() {
                       className={inputClass}
                     />
                   </Field>
+                  <Field label="Total seats / covers">
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="e.g. 40"
+                      value={form.restaurant.max_covers || ""}
+                      onChange={(e) => updateRestaurant("max_covers", Number(e.target.value) || 0)}
+                      className={inputClass}
+                    />
+                    <p className="mt-1.5 text-xs text-neutral-400">
+                      Set this to let your AI receptionist book real table reservations directly
+                      during calls, checked against how many guests are already booked at that time.
+                    </p>
+                  </Field>
+                  <Field label="Typical reservation length (minutes)">
+                    <input
+                      type="number"
+                      min={15}
+                      step={15}
+                      value={form.restaurant.reservation_duration_minutes}
+                      onChange={(e) =>
+                        updateRestaurant("reservation_duration_minutes", Number(e.target.value) || 90)
+                      }
+                      className={inputClass}
+                    />
+                  </Field>
                   <Field label="Delivery/takeout options">
                     <input
                       placeholder="Pickup, Uber Eats, DoorDash"
@@ -602,6 +630,16 @@ export default function OnboardPage() {
                     value={form.languages.map((l) => LANGUAGES.find((x) => x.value === l)?.label ?? l).join(", ")}
                   />
                   <ReviewRow label="Voice" value={form.voice_id} />
+                  {form.industry === "restaurant" && (
+                    <ReviewRow
+                      label="Reservations"
+                      value={
+                        form.restaurant.max_covers
+                          ? `${form.restaurant.max_covers} seats, live booking enabled`
+                          : "Not set — AI will take messages instead"
+                      }
+                    />
+                  )}
                   <p className="text-sm text-neutral-500 pt-2">
                     Call summaries will be emailed to your account email.
                   </p>
