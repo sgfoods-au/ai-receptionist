@@ -1,5 +1,6 @@
 import type { Business } from "@/lib/types";
 import { buildSystemPrompt } from "@/lib/vapi/prompt";
+import { DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
 
 const VAPI_BASE_URL = "https://api.vapi.ai";
 
@@ -91,8 +92,16 @@ function bookAppointmentTools(business: Business, webhookUrl: string, webhookSec
   ];
 }
 
-/** Fields common to both create and update: the parts driven by business onboarding data. */
+/**
+ * Fields common to both create and update: the parts driven by business
+ * onboarding data, including voice/language — the onboarding UI's voice
+ * and language pickers are the source of truth, so these sync on every
+ * save rather than only being set once at creation.
+ */
 function businessDrivenFields(business: Business, webhookUrl: string, webhookSecret: string) {
+  const languages = business.languages?.length ? business.languages : ["en"];
+  const isMultilingual = languages.length > 1 || languages[0] !== "en";
+
   return {
     name: business.name,
     firstMessage: `Thanks for calling ${business.name}. How can I help you today?`,
@@ -101,6 +110,18 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
       model: "claude-3-5-sonnet-20241022",
       messages: [{ role: "system", content: buildSystemPrompt(business) }],
       tools: [...transferTools(business), ...bookAppointmentTools(business, webhookUrl, webhookSecret)],
+    },
+    voice: {
+      // Vapi's built-in voice provider needs no extra credentials; "auto"
+      // language lets one voice handle every selected language.
+      provider: "vapi",
+      voiceId: business.voice_id || DEFAULT_VOICE_ID,
+      language: isMultilingual ? "auto" : "en",
+    },
+    transcriber: {
+      provider: "deepgram",
+      model: "nova-3",
+      language: isMultilingual ? "multi" : "en",
     },
     server: {
       url: webhookUrl,
@@ -129,35 +150,15 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
   };
 }
 
-/** Full payload for creating a brand-new assistant, including sensible voice/transcriber defaults. */
-function createPayload(business: Business, webhookUrl: string, webhookSecret: string) {
-  const speaksHindi = business.languages?.includes("hi");
-
-  return {
-    ...businessDrivenFields(business, webhookUrl, webhookSecret),
-    voice: {
-      // Vapi's built-in voice provider needs no extra credentials; "auto"
-      // language lets it handle English + Hindi from one assistant.
-      provider: "vapi",
-      voiceId: "Elliot",
-      language: speaksHindi ? "auto" : "en",
-    },
-    transcriber: {
-      provider: "deepgram",
-      model: "nova-3",
-      language: speaksHindi ? "multi" : "en",
-    },
-  };
-}
-
 /**
  * Creates or updates the Vapi assistant for a business, keeping its
  * vapi_assistant_id in sync. Caller is responsible for persisting the
  * returned id back onto the business row.
  *
- * Updates only patch the business-driven fields (system prompt, first
- * message, webhook) so voice/transcriber choices made directly in the Vapi
- * dashboard for an existing assistant are left untouched.
+ * Both create and update send the same business-driven fields (system
+ * prompt, voice, language, tools, webhook) — the onboarding UI is the
+ * source of truth for all of it, so re-saving onboarding always syncs the
+ * live assistant to match.
  */
 export async function createOrUpdateAssistant(
   business: Business,
@@ -177,7 +178,7 @@ export async function createOrUpdateAssistant(
 
   const created = await vapiRequest<{ id: string }>("/assistant", {
     method: "POST",
-    body: JSON.stringify(createPayload(business, webhookUrl, webhookSecret)),
+    body: JSON.stringify(businessDrivenFields(business, webhookUrl, webhookSecret)),
   });
   return { assistantId: created.id };
 }

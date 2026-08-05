@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
+import { SUPPORTED_LANGUAGES } from "@/lib/vapi/languages";
+import { VOICES, DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
 import type { Faq, Industry, MortgageBrokerData } from "@/lib/types";
 
 const LOAN_TYPES = [
@@ -12,10 +14,7 @@ const LOAN_TYPES = [
   { value: "commercial", label: "Commercial loans" },
 ];
 
-const LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "hi", label: "Hindi" },
-];
+const LANGUAGES = SUPPORTED_LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
 
 interface FormState {
   name: string;
@@ -27,6 +26,7 @@ interface FormState {
   service_area: string;
   faqs: Faq[];
   languages: string[];
+  voice_id: string;
   industry: Industry;
   mortgageBroker: MortgageBrokerData;
 }
@@ -41,6 +41,7 @@ const EMPTY_FORM: FormState = {
   service_area: "",
   faqs: [],
   languages: ["en"],
+  voice_id: DEFAULT_VOICE_ID,
   industry: "other",
   mortgageBroker: {
     loan_types: [],
@@ -50,7 +51,15 @@ const EMPTY_FORM: FormState = {
   },
 };
 
-type StepId = "type" | "website" | "basics" | "details" | "mortgage" | "languages" | "review";
+type StepId =
+  | "type"
+  | "website"
+  | "basics"
+  | "details"
+  | "mortgage"
+  | "languages"
+  | "voice"
+  | "review";
 
 const STEP_TITLES: Record<StepId, string> = {
   type: "What kind of business?",
@@ -59,6 +68,7 @@ const STEP_TITLES: Record<StepId, string> = {
   details: "What you offer",
   mortgage: "Broker details",
   languages: "Languages",
+  voice: "Choose a voice",
   review: "Review & activate",
 };
 
@@ -73,7 +83,7 @@ export default function OnboardPage() {
   const steps = useMemo<StepId[]>(() => {
     const base: StepId[] = ["type", "website", "basics", "details"];
     if (form.industry === "mortgage_broker") base.push("mortgage");
-    base.push("languages", "review");
+    base.push("languages", "voice", "review");
     return base;
   }, [form.industry]);
 
@@ -400,6 +410,25 @@ export default function OnboardPage() {
                 </div>
               )}
 
+              {currentStep === "voice" && (
+                <div className="space-y-2">
+                  <p className="text-sm text-neutral-400 mb-4">
+                    Pick a voice for your AI receptionist — it works across every language you
+                    selected.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {VOICES.map((voice) => (
+                      <SelectCard
+                        key={voice.id}
+                        label={voice.name}
+                        selected={form.voice_id === voice.id}
+                        onClick={() => update("voice_id", voice.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {currentStep === "review" && (
                 <div className="space-y-4">
                   <ReviewRow label="Business" value={form.name || "—"} />
@@ -413,6 +442,7 @@ export default function OnboardPage() {
                     label="Languages"
                     value={form.languages.map((l) => LANGUAGES.find((x) => x.value === l)?.label ?? l).join(", ")}
                   />
+                  <ReviewRow label="Voice" value={form.voice_id} />
                   <p className="text-sm text-neutral-500 pt-2">
                     Call summaries will be emailed to your account email.
                   </p>
@@ -501,7 +531,7 @@ function SelectCard({
   onClick,
 }: {
   label: string;
-  description: string;
+  description?: string;
   selected: boolean;
   onClick: () => void;
 }) {
@@ -516,7 +546,7 @@ function SelectCard({
       }`}
     >
       <p className="font-medium text-sm mb-1">{label}</p>
-      <p className="text-xs text-neutral-500">{description}</p>
+      {description && <p className="text-xs text-neutral-500">{description}</p>}
     </button>
   );
 }

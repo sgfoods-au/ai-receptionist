@@ -25,6 +25,7 @@ export interface Business {
   service_area: string | null;
   faqs: Faq[] | null;
   languages: string[];
+  voice_id: string;
   industry: Industry;
   industry_data: MortgageBrokerData | null;
   system_prompt: string | null;
@@ -93,6 +94,7 @@ export interface BusinessOnboardingInput {
   service_area?: string;
   faqs?: Faq[];
   languages?: string[];
+  voice_id?: string;
   industry?: Industry;
   industry_data?: MortgageBrokerData;
 }

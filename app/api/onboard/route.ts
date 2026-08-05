@@ -49,6 +49,7 @@ export async function POST(request: Request) {
           service_area: input.service_area ?? null,
           faqs: input.faqs ?? [],
           languages: input.languages?.length ? input.languages : ["en"],
+          voice_id: input.voice_id || "Elliot",
           industry,
           industry_data: industry === "mortgage_broker" ? (input.industry_data ?? null) : null,
           updated_at: new Date().toISOString(),
