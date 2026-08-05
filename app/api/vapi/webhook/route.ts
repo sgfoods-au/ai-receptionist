@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { sendCallSummaryEmail } from "@/lib/email/resend";
+import { sendSms } from "@/lib/twilio/sms";
 import type { Business } from "@/lib/types";
 
 interface VapiCallObject {
@@ -28,6 +29,7 @@ interface VapiEndOfCallMessage {
       urgency?: "low" | "medium" | "high";
       callbackRequested?: boolean;
       language?: string;
+      smsConsent?: boolean;
     };
   };
   artifact?: {
@@ -119,6 +121,7 @@ export async function POST(request: Request) {
       caller_intent: structured?.intent ?? null,
       urgency: structured?.urgency ?? null,
       callback_requested: structured?.callbackRequested ?? false,
+      sms_consent_given: structured?.smsConsent ?? false,
       cost: message.cost ?? null,
       cost_breakdown: message.costBreakdown ?? null,
       raw_webhook_payload: rawPayload,
@@ -142,6 +145,36 @@ export async function POST(request: Request) {
   } catch (err) {
     // Don't fail the webhook ack over an email delivery problem — the call is already logged.
     console.error("Failed to send call summary email:", err);
+  }
+
+  try {
+    let smsSent = false;
+
+    if (business.sms_notifications_enabled && business.owner_phone) {
+      const appBaseUrl = process.env.APP_BASE_URL;
+      await sendSms(
+        business.owner_phone,
+        `New call for ${business.name} from ${call.customer?.number ?? "unknown"}. ` +
+          `${summary ? summary.slice(0, 100) : "No summary available."}` +
+          (appBaseUrl ? ` Details: ${appBaseUrl}/dashboard/calls/${insertedCall.id}` : "")
+      );
+      smsSent = true;
+    }
+
+    if (structured?.smsConsent && call.customer?.number) {
+      await sendSms(
+        call.customer.number,
+        `Thanks for calling ${business.name}! We received your message and will get back to you soon.`
+      );
+      smsSent = true;
+    }
+
+    if (smsSent) {
+      await supabase.from("calls").update({ sms_sent: true }).eq("id", insertedCall.id);
+    }
+  } catch (err) {
+    // Don't fail the webhook ack over an SMS delivery problem — the call is already logged.
+    console.error("Failed to send call summary SMS:", err);
   }
 
   return NextResponse.json({ ok: true });

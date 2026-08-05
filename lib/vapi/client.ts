@@ -66,6 +66,22 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
     endCallFunctionEnabled: true,
     analysisPlan: {
       summaryPlan: { enabled: true },
+      structuredDataPlan: {
+        enabled: true,
+        schema: {
+          type: "object",
+          properties: {
+            intent: { type: "string", description: "What the caller wanted, in a few words." },
+            urgency: { type: "string", enum: ["low", "medium", "high"] },
+            callbackRequested: { type: "boolean" },
+            language: { type: "string", description: "Language spoken, e.g. 'en' or 'hi'." },
+            smsConsent: {
+              type: "boolean",
+              description: "Whether the caller agreed to receive a text message.",
+            },
+          },
+        },
+      },
     },
   };
 }

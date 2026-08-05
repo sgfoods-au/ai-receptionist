@@ -38,6 +38,7 @@ export interface Business {
   plan_id: PlanId | null;
   subscription_status: string | null;
   current_period_end: string | null;
+  sms_notifications_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -61,6 +62,8 @@ export interface Call {
   callback_requested: boolean;
   email_sent: boolean;
   email_sent_at: string | null;
+  sms_sent: boolean;
+  sms_consent_given: boolean;
   cost: number | null;
   cost_breakdown: CallCostBreakdown | null;
   raw_webhook_payload: unknown;
