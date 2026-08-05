@@ -15,6 +15,11 @@ function getTwilioClient() {
  * owns call handling for this number, not our app.
  */
 export async function purchaseAustralianNumber(): Promise<{ number: string }> {
+  const addressSid = process.env.TWILIO_ADDRESS_SID;
+  if (!addressSid) {
+    throw new Error("Missing TWILIO_ADDRESS_SID environment variable.");
+  }
+
   const client = getTwilioClient();
 
   const available = await client.availablePhoneNumbers("AU").local.list({ limit: 1 });
@@ -24,6 +29,7 @@ export async function purchaseAustralianNumber(): Promise<{ number: string }> {
 
   const purchased = await client.incomingPhoneNumbers.create({
     phoneNumber: available[0].phoneNumber,
+    addressSid,
   });
 
   return { number: purchased.phoneNumber };
