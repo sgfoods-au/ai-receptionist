@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createProxyClient } from "@/lib/supabase/proxy-client";
 
-const PROTECTED_PREFIXES = ["/onboard", "/dashboard"];
+const PROTECTED_PREFIXES = ["/onboard", "/dashboard", "/admin"];
 
 export async function proxy(request: NextRequest) {
   // Don't destructure `response` here — it's a live getter that reflects
@@ -26,5 +26,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/onboard/:path*", "/dashboard/:path*"],
+  matcher: ["/onboard/:path*", "/dashboard/:path*", "/admin/:path*"],
 };
