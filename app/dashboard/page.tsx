@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { SignOutButton } from "@/app/components/SignOutButton";
+import { CallRoutingCard } from "@/app/dashboard/components/CallRoutingCard";
 import type { Business } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +53,7 @@ export default async function DashboardPage() {
               Edit business info
             </Link>
           </div>
+          <CallRoutingCard business={biz} />
         </div>
       )}
     </main>
