@@ -2,12 +2,8 @@
 
 import { useState } from "react";
 import { CARRIERS } from "@/lib/carriers";
+import { CARD, CardHeading, Disclosure, PRIMARY_BTN } from "@/app/dashboard/components/ui";
 import type { Business } from "@/lib/types";
-
-const CARD =
-  "rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 backdrop-blur-sm animate-fade-in-up";
-const PRIMARY_BTN =
-  "rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 transition-opacity";
 
 export function CallRoutingCard({ business }: { business: Business }) {
   const [aiNumber, setAiNumber] = useState(business.vapi_phone_number);
@@ -54,10 +50,8 @@ export function CallRoutingCard({ business }: { business: Business }) {
   if (!business.vapi_assistant_id) {
     return (
       <div className={CARD}>
-        <p className="font-medium text-white">Call routing</p>
-        <p className="mt-2 text-sm text-neutral-500">
-          Your AI receptionist isn&apos;t connected yet — finish setup first.
-        </p>
+        <CardHeading icon={<PhoneIcon />} title="Call routing" />
+        <p className="mt-4 text-sm text-neutral-500">Finish setup first to enable this.</p>
       </div>
     );
   }
@@ -65,17 +59,14 @@ export function CallRoutingCard({ business }: { business: Business }) {
   if (!isAustralianNumber) {
     return (
       <div className={CARD}>
-        <SectionHeading />
-        <p className="mt-3 text-sm text-neutral-400 leading-relaxed">
-          Your AI receptionist currently has{" "}
-          {aiNumber ? "a non-Australian number" : "no number"} attached. Connect an Australian
-          number so call forwarding from your own phone is a normal domestic call, not
-          international.
+        <CardHeading icon={<PhoneIcon />} title="Call routing" />
+        <p className="mt-4 text-sm text-neutral-500">
+          Connect an Australian number for domestic-cost call forwarding.
         </p>
         <button onClick={handleConnectAuNumber} disabled={connecting} className={`mt-5 ${PRIMARY_BTN}`}>
           {connecting ? "Connecting..." : "Connect Australian number"}
         </button>
-        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
       </div>
     );
   }
@@ -86,24 +77,22 @@ export function CallRoutingCard({ business }: { business: Business }) {
 
   return (
     <div className={CARD}>
-      <SectionHeading />
+      <CardHeading icon={<PhoneIcon />} title="Call routing" subtitle="Ring your phone first, AI on no answer" />
 
-      <div className="mt-5 flex items-center gap-4 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4">
+      <div className="mt-5 flex items-center gap-4 rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 p-5">
         <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 animate-glow-pulse">
           <PhoneIcon />
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wide text-neutral-500">
-            Your AI receptionist number
-          </p>
-          <p className="text-lg font-semibold text-white tracking-tight">{aiNumber}</p>
+          <p className="text-xs uppercase tracking-wide text-neutral-500">AI receptionist number</p>
+          <p className="text-lg font-semibold text-neutral-900 tracking-tight">{aiNumber}</p>
         </div>
       </div>
 
       <div className="mt-6">
-        <label className="flex items-center justify-between text-sm text-neutral-400 mb-2">
+        <label className="flex items-center justify-between text-sm text-neutral-600 mb-2">
           <span>Ring before forwarding</span>
-          <span className="font-mono text-violet-300">{ringSeconds}s</span>
+          <span className="font-mono font-medium text-violet-700">{ringSeconds}s</span>
         </label>
         <input
           type="range"
@@ -112,12 +101,12 @@ export function CallRoutingCard({ business }: { business: Business }) {
           step={5}
           value={ringSeconds}
           onChange={(e) => handleRingSecondsChange(Number(e.target.value))}
-          className="w-full accent-violet-500"
+          className="w-full accent-violet-600"
         />
       </div>
 
       <div className="mt-6">
-        <p className="text-sm text-neutral-400 mb-3">Your carrier</p>
+        <p className="text-sm text-neutral-600 mb-3">Your carrier</p>
         <div className="flex flex-wrap gap-2.5">
           {CARRIERS.map((c) => {
             const selected = c.id === carrierId;
@@ -127,8 +116,8 @@ export function CallRoutingCard({ business }: { business: Business }) {
                 onClick={() => setCarrierId(c.id)}
                 className={`group flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3.5 text-sm font-medium transition-all ${
                   selected
-                    ? "border-transparent bg-neutral-800 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-                    : "border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200"
+                    ? "border-violet-300 bg-violet-50 text-violet-800 shadow-sm"
+                    : "border-neutral-200 text-neutral-500 hover:border-violet-200 hover:bg-violet-50/50"
                 }`}
               >
                 <span
@@ -149,48 +138,36 @@ export function CallRoutingCard({ business }: { business: Business }) {
 
       <div
         key={carrierId}
-        className="mt-5 rounded-xl border border-neutral-800 bg-neutral-950/60 p-4 space-y-2.5 animate-fade-in-up"
+        className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4 animate-fade-in-up"
       >
-        <p className="text-sm font-medium text-neutral-300">On your phone&apos;s dialer, call:</p>
-        <p className="font-mono text-lg text-violet-300 tracking-tight">{enableCode}</p>
-        <p className="text-sm text-neutral-500 leading-relaxed">
-          This is the standard GSM code for &quot;Call Forward When Unanswered&quot;, supported by
-          most Australian carriers. Your phone should confirm forwarding is on. To turn it off
-          later, dial <span className="font-mono text-neutral-400">{disableCode}</span>.
-        </p>
-        <p className="text-xs text-neutral-600 leading-relaxed">{carrier.notes}</p>
+        <div>
+          <p className="text-xs text-neutral-500">Dial this to enable forwarding</p>
+          <p className="font-mono text-lg text-violet-700 tracking-tight">{enableCode}</p>
+        </div>
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+      <Disclosure label="How this works">
+        <div className="space-y-2 rounded-xl bg-neutral-50 p-4 text-sm text-neutral-600 leading-relaxed">
+          <p>
+            This is the standard GSM code for &quot;Call Forward When Unanswered&quot;, supported
+            by most Australian carriers. Your phone should confirm forwarding is on. To turn it
+            off later, dial <span className="font-mono text-neutral-800">{disableCode}</span>.
+          </p>
+          <p className="text-neutral-500">{carrier.notes}</p>
+        </div>
+      </Disclosure>
+
+      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
     </div>
   );
 }
 
-function SectionHeading() {
+function PhoneIcon() {
   return (
-    <div className="flex items-start gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15">
-        <PhoneIcon small />
-      </div>
-      <div>
-        <p className="font-medium text-white">Call routing</p>
-        <p className="mt-0.5 text-sm text-neutral-500">
-          Keep giving customers your own number — no new number needed. Set up{" "}
-          <span className="text-neutral-300">call forwarding on no answer</span> so unanswered
-          calls fall through to your AI receptionist automatically.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function PhoneIcon({ small }: { small?: boolean }) {
-  const size = small ? 16 : 18;
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <path
         d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"
-        fill={small ? "#c4b5fd" : "white"}
+        fill="white"
       />
     </svg>
   );

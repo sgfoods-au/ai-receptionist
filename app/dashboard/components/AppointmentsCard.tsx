@@ -1,41 +1,60 @@
+import { CARD, CardHeading, PRIMARY_BTN } from "@/app/dashboard/components/ui";
 import type { Business } from "@/lib/types";
-
-const CARD =
-  "rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 backdrop-blur-sm animate-fade-in-up";
-const PRIMARY_BTN =
-  "inline-block rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity";
 
 export function AppointmentsCard({ business }: { business: Business }) {
   return (
     <div className={CARD}>
-      <p className="font-medium text-white">Appointments</p>
+      <CardHeading icon={<CalendarIcon />} title="Appointments" />
 
       {!business.google_calendar_connected && (
         <>
-          <p className="mt-2 text-sm text-neutral-500">
-            Connect Google Calendar so your AI receptionist can check availability and book real
-            appointments during calls, instead of just taking a message.
+          <p className="mt-4 text-sm text-neutral-500">
+            Let your AI receptionist book real appointments during calls.
           </p>
-          <a href="/api/google/oauth/start" className={`mt-4 ${PRIMARY_BTN}`}>
+          <a href="/api/google/oauth/start" className={`mt-5 inline-block ${PRIMARY_BTN}`}>
             Connect Google Calendar
           </a>
         </>
       )}
 
       {business.google_calendar_connected && (
-        <div className="mt-4 flex items-center justify-between rounded-xl border border-violet-500/20 bg-violet-500/5 p-4">
-          <div>
-            <p className="text-sm text-neutral-400">Connected calendar</p>
-            <p className="text-white font-medium">{business.google_calendar_email}</p>
+        <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 p-5">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+              <CheckIcon />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs text-neutral-500">Connected</p>
+              <p className="font-medium text-neutral-900 truncate">
+                {business.google_calendar_email}
+              </p>
+            </div>
           </div>
           <a
             href="/api/google/oauth/start"
-            className="text-sm text-neutral-400 hover:text-white transition-colors"
+            className="shrink-0 text-sm font-medium text-violet-600 hover:text-violet-700 transition-colors"
           >
             Reconnect
           </a>
         </div>
       )}
     </div>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="5" width="18" height="16" rx="2.5" stroke="white" strokeWidth="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" stroke="white" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

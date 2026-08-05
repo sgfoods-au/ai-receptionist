@@ -9,9 +9,9 @@ import type { Business } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 const STATUS_STYLES: Record<Business["status"], string> = {
-  active: "bg-emerald-500/15 text-emerald-300",
-  draft: "bg-amber-500/15 text-amber-300",
-  paused: "bg-neutral-500/15 text-neutral-300",
+  active: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+  draft: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+  paused: "bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200",
 };
 
 export default async function DashboardPage() {
@@ -29,30 +29,30 @@ export default async function DashboardPage() {
   const biz = business as Business | null;
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white relative overflow-hidden">
+    <div className="min-h-screen bg-white text-neutral-900 relative overflow-hidden">
       <div
-        className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
+        className="pointer-events-none absolute -top-52 left-1/2 h-[700px] w-[1100px] -translate-x-1/2 rounded-full opacity-60 blur-3xl animate-soft-float"
         style={{
           background:
-            "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(99,102,241,0.3) 40%, transparent 70%)",
+            "radial-gradient(circle, rgba(139,92,246,0.16) 0%, rgba(99,102,241,0.10) 40%, transparent 70%)",
         }}
       />
 
-      <div className="relative mx-auto max-w-2xl px-6 py-12">
-        <div className="flex items-center justify-between mb-10">
+      <div className="relative mx-auto max-w-6xl px-6 py-10 sm:py-14">
+        <div className="flex items-center justify-between mb-10 sm:mb-14">
           <div>
-            <span className="text-sm font-medium text-violet-400">Oviflow</span>
-            <h1 className="text-2xl font-semibold tracking-tight mt-1">Dashboard</h1>
+            <span className="text-sm font-semibold tracking-wide text-violet-600">Oviflow</span>
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mt-1">Dashboard</h1>
           </div>
           <SignOutButton />
         </div>
 
         {!biz && (
-          <div className="animate-fade-in-up rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 text-center">
-            <p className="text-neutral-400">You haven&apos;t set up your AI receptionist yet.</p>
+          <div className="animate-fade-in-up rounded-3xl border border-violet-100 bg-white p-10 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_40px_-20px_rgba(139,92,246,0.25)]">
+            <p className="text-neutral-500">You haven&apos;t set up your AI receptionist yet.</p>
             <Link
               href="/onboard"
-              className="mt-5 inline-block rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              className="mt-6 inline-block rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-7 py-3 text-sm font-medium text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all"
             >
               Finish setup
             </Link>
@@ -60,40 +60,51 @@ export default async function DashboardPage() {
         )}
 
         {biz && (
-          <div className="space-y-6">
-            <div className="animate-fade-in-up rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6">
-              <div className="flex items-center justify-between">
-                <p className="text-lg font-semibold tracking-tight">{biz.name}</p>
+          <div className="space-y-6 sm:space-y-8">
+            <div className="animate-fade-in-up rounded-3xl border border-violet-100 bg-white p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_40px_-20px_rgba(139,92,246,0.2)]">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xl sm:text-2xl font-semibold tracking-tight">{biz.name}</p>
                 <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${STATUS_STYLES[biz.status]}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${STATUS_STYLES[biz.status]}`}
                 >
                   {biz.status}
                 </span>
               </div>
               <p className="mt-2 text-sm text-neutral-500">
                 Phone number:{" "}
-                <span className="text-neutral-300">{biz.vapi_phone_number ?? "Not attached yet"}</span>
+                <span className="font-medium text-neutral-800">
+                  {biz.vapi_phone_number ?? "Not attached yet"}
+                </span>
               </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href="/dashboard/calls"
+                  className="rounded-xl border border-neutral-200 px-5 py-2.5 text-sm font-medium text-neutral-700 hover:border-violet-200 hover:bg-violet-50 transition-colors"
+                >
+                  View call log
+                </Link>
+                <Link
+                  href="/onboard"
+                  className="rounded-xl border border-neutral-200 px-5 py-2.5 text-sm font-medium text-neutral-700 hover:border-violet-200 hover:bg-violet-50 transition-colors"
+                >
+                  Edit business info
+                </Link>
+              </div>
             </div>
 
-            <div className="flex gap-3">
-              <Link
-                href="/dashboard/calls"
-                className="rounded-lg border border-neutral-800 px-5 py-2.5 text-sm font-medium text-neutral-300 hover:bg-neutral-900 transition-colors"
-              >
-                View call log
-              </Link>
-              <Link
-                href="/onboard"
-                className="rounded-lg border border-neutral-800 px-5 py-2.5 text-sm font-medium text-neutral-300 hover:bg-neutral-900 transition-colors"
-              >
-                Edit business info
-              </Link>
+            <div style={{ animationDelay: "60ms" }} className="animate-fade-in-up">
+              <BillingCard business={biz} />
             </div>
 
-            <BillingCard business={biz} />
-            <AppointmentsCard business={biz} />
-            <CallRoutingCard business={biz} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+              <div style={{ animationDelay: "120ms" }} className="animate-fade-in-up">
+                <AppointmentsCard business={biz} />
+              </div>
+              <div style={{ animationDelay: "180ms" }} className="animate-fade-in-up">
+                <CallRoutingCard business={biz} />
+              </div>
+            </div>
           </div>
         )}
       </div>
