@@ -124,6 +124,40 @@ export async function provisionPhoneNumber(
 }
 
 /**
+ * Imports an already-purchased Twilio number into Vapi and attaches it to
+ * the given assistant. Twilio auth is read from TWILIO_ACCOUNT_SID /
+ * TWILIO_AUTH_TOKEN (same credentials used to purchase the number in
+ * lib/twilio/client.ts).
+ */
+export async function importTwilioNumber(
+  assistantId: string,
+  number: string
+): Promise<{ phoneNumberId: string; number: string }> {
+  const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+  const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+  if (!twilioAccountSid || !twilioAuthToken) {
+    throw new Error("Missing TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN environment variable.");
+  }
+
+  const imported = await vapiRequest<{ id: string; number: string }>("/phone-number", {
+    method: "POST",
+    body: JSON.stringify({
+      provider: "twilio",
+      number,
+      twilioAccountSid,
+      twilioAuthToken,
+      assistantId,
+    }),
+  });
+  return { phoneNumberId: imported.id, number: imported.number };
+}
+
+/** Detaches/deletes a phone number from Vapi, e.g. when replacing it with a different number. */
+export async function releaseVapiNumber(phoneNumberId: string): Promise<void> {
+  await vapiRequest<void>(`/phone-number/${phoneNumberId}`, { method: "DELETE" });
+}
+
+/**
  * Looks up whether a phone number has already been attached to this
  * assistant directly in the Vapi dashboard, so onboarding can pick it up
  * without provisioning a duplicate.
