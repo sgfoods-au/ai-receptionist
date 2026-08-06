@@ -111,6 +111,11 @@ const INDUSTRIES = [
       "Callers can book real lessons straight onto your instructor's calendar — lesson type, vehicle, and license class all handled.",
   },
   {
+    title: "Mechanics & auto service",
+    description:
+      "Callers can book their car in for a service, check loan car availability, and get quick quotes — straight onto your calendar.",
+  },
+  {
     title: "Any small business",
     description:
       "If customers call you, Oviflow can answer for you — the setup adapts to what your business actually does.",

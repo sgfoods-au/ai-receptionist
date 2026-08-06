@@ -1,4 +1,10 @@
-import type { Business, DrivingSchoolData, MortgageBrokerData, RestaurantData } from "@/lib/types";
+import type {
+  Business,
+  CarServiceData,
+  DrivingSchoolData,
+  MortgageBrokerData,
+  RestaurantData,
+} from "@/lib/types";
 
 /** Builds the system prompt fed to the Vapi assistant from a business's onboarding data. */
 export function buildSystemPrompt(business: Business): string {
@@ -18,10 +24,17 @@ export function buildSystemPrompt(business: Business): string {
       ? (business.industry_data as DrivingSchoolData | null)
       : null;
 
+  const carServiceData =
+    business.industry === "car_service"
+      ? (business.industry_data as CarServiceData | null)
+      : null;
+
   const bookingSection = business.google_calendar_connected
     ? drivingSchoolData
       ? `\nYou can book real driving lessons on the business's calendar. When a caller wants to book a lesson, agree on a specific date and time, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Lessons are typically ${drivingSchoolData.lesson_duration_minutes} minutes unless the caller asks for something different. If the tool reports the slot is taken, ask the caller for another time and try again.\n`
-      : "\nYou can book real appointments on the business's calendar. When a caller wants to schedule something, agree on a specific date, time, and what it's for, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. If the tool reports the slot is taken, ask the caller for another time and try again.\n"
+      : carServiceData
+        ? `\nYou can book real vehicle drop-off/service appointments on the business's calendar. When a caller wants to book their car in, agree on a specific date and time and what work is needed, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Services typically take about ${carServiceData.typical_service_duration_minutes} minutes unless the caller asks for something different. If the tool reports the slot is taken, ask the caller for another time and try again.\n`
+        : "\nYou can book real appointments on the business's calendar. When a caller wants to schedule something, agree on a specific date, time, and what it's for, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. If the tool reports the slot is taken, ask the caller for another time and try again.\n"
     : "";
 
   const sendLinkSection =
@@ -72,7 +85,13 @@ License classes taught: ${drivingSchoolData.license_classes?.length ? drivingSch
 Instructors: ${drivingSchoolData.instructor_names || "Not specified"}
 Standard lesson length: ${drivingSchoolData.lesson_duration_minutes} minutes
 Pickup provided: ${drivingSchoolData.pickup_provided ? "Yes" : "No"}\n`
-        : "";
+        : carServiceData
+          ? `\nServices offered: ${carServiceData.service_types?.length ? carServiceData.service_types.join(", ") : "Not specified"}
+Makes/models serviced: ${carServiceData.makes_serviced || "Not specified"}
+Loan car available: ${carServiceData.loan_car_available ? "Yes" : "No"}
+Pickup/drop-off offered: ${carServiceData.pickup_dropoff_offered ? "Yes" : "No"}
+Typical service duration: ${carServiceData.typical_service_duration_minutes} minutes\n`
+          : "";
 
   return `You are the AI receptionist for ${business.name}.
 

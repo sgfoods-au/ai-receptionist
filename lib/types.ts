@@ -3,7 +3,12 @@ export interface Faq {
   answer: string;
 }
 
-export type Industry = "other" | "mortgage_broker" | "restaurant" | "driving_school";
+export type Industry =
+  | "other"
+  | "mortgage_broker"
+  | "restaurant"
+  | "driving_school"
+  | "car_service";
 
 export interface MortgageBrokerData {
   loan_types: string[];
@@ -37,6 +42,14 @@ export interface DrivingSchoolData {
   pickup_provided: boolean;
 }
 
+export interface CarServiceData {
+  service_types: string[];
+  makes_serviced: string;
+  loan_car_available: boolean;
+  pickup_dropoff_offered: boolean;
+  typical_service_duration_minutes: number;
+}
+
 /**
  * Credentials for dispatching a courier via DoorDash Drive or Uber Direct
  * once a phone order needs delivery — neither is self-serve, so this stays
@@ -68,7 +81,7 @@ export interface Business {
   languages: string[];
   voice_id: string;
   industry: Industry;
-  industry_data: MortgageBrokerData | RestaurantData | DrivingSchoolData | null;
+  industry_data: MortgageBrokerData | RestaurantData | DrivingSchoolData | CarServiceData | null;
   system_prompt: string | null;
   vapi_assistant_id: string | null;
   vapi_phone_number_id: string | null;
@@ -152,7 +165,7 @@ export interface BusinessOnboardingInput {
   languages?: string[];
   voice_id?: string;
   industry?: Industry;
-  industry_data?: MortgageBrokerData | RestaurantData | DrivingSchoolData;
+  industry_data?: MortgageBrokerData | RestaurantData | DrivingSchoolData | CarServiceData;
 }
 
 export interface ScrapedBusinessInfo {

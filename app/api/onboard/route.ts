@@ -34,7 +34,8 @@ export async function POST(request: Request) {
     const industry =
       input.industry === "mortgage_broker" ||
       input.industry === "restaurant" ||
-      input.industry === "driving_school"
+      input.industry === "driving_school" ||
+      input.industry === "car_service"
         ? input.industry
         : "other";
 
@@ -59,7 +60,8 @@ export async function POST(request: Request) {
           industry_data:
             industry === "mortgage_broker" ||
             industry === "restaurant" ||
-            industry === "driving_school"
+            industry === "driving_school" ||
+            industry === "car_service"
               ? (input.industry_data ?? null)
               : null,
           updated_at: new Date().toISOString(),

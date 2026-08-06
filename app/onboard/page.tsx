@@ -6,7 +6,14 @@ import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
 import { SUPPORTED_LANGUAGES } from "@/lib/vapi/languages";
 import { VOICES, DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
 import { AnimatedLines, CARD, INPUT, Logo, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
-import type { DrivingSchoolData, Faq, Industry, MortgageBrokerData, RestaurantData } from "@/lib/types";
+import type {
+  CarServiceData,
+  DrivingSchoolData,
+  Faq,
+  Industry,
+  MortgageBrokerData,
+  RestaurantData,
+} from "@/lib/types";
 
 const LOAN_TYPES = [
   { value: "home", label: "Home loans" },
@@ -43,6 +50,16 @@ const LICENSE_CLASSES = [
   { value: "truck", label: "Truck" },
 ];
 
+const CAR_SERVICE_TYPES = [
+  { value: "general_service", label: "General service" },
+  { value: "logbook_service", label: "Logbook service" },
+  { value: "brakes", label: "Brakes" },
+  { value: "tyres", label: "Tyres" },
+  { value: "roadworthy", label: "Roadworthy / rego check" },
+  { value: "air_con", label: "Air con" },
+  { value: "diagnostics", label: "Diagnostics" },
+];
+
 const LANGUAGES = SUPPORTED_LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
 
 interface FormState {
@@ -60,6 +77,7 @@ interface FormState {
   mortgageBroker: MortgageBrokerData;
   restaurant: RestaurantData;
   drivingSchool: DrivingSchoolData;
+  carService: CarServiceData;
 }
 
 const EMPTY_FORM: FormState = {
@@ -103,6 +121,13 @@ const EMPTY_FORM: FormState = {
     lesson_duration_minutes: 60,
     pickup_provided: false,
   },
+  carService: {
+    service_types: [],
+    makes_serviced: "",
+    loan_car_available: false,
+    pickup_dropoff_offered: false,
+    typical_service_duration_minutes: 60,
+  },
 };
 
 type StepId =
@@ -113,6 +138,7 @@ type StepId =
   | "mortgage"
   | "restaurant"
   | "driving_school"
+  | "car_service"
   | "languages"
   | "voice"
   | "review";
@@ -125,6 +151,7 @@ const STEP_TITLES: Record<StepId, string> = {
   mortgage: "Broker details",
   restaurant: "Restaurant profile",
   driving_school: "Driving school profile",
+  car_service: "Mechanic / service profile",
   languages: "Languages",
   voice: "Choose a voice",
   review: "Review & activate",
@@ -191,6 +218,7 @@ function OnboardForm() {
     if (form.industry === "mortgage_broker") base.push("mortgage");
     if (form.industry === "restaurant") base.push("restaurant");
     if (form.industry === "driving_school") base.push("driving_school");
+    if (form.industry === "car_service") base.push("car_service");
     base.push("languages", "voice", "review");
     return base;
   }, [form.industry]);
@@ -306,6 +334,25 @@ function OnboardForm() {
     setForm((prev) => ({
       ...prev,
       drivingSchool: { ...prev.drivingSchool, [key]: value },
+    }));
+  }
+
+  function toggleCarServiceType(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      carService: {
+        ...prev.carService,
+        service_types: prev.carService.service_types.includes(value)
+          ? prev.carService.service_types.filter((v) => v !== value)
+          : [...prev.carService.service_types, value],
+      },
+    }));
+  }
+
+  function updateCarService<K extends keyof CarServiceData>(key: K, value: CarServiceData[K]) {
+    setForm((prev) => ({
+      ...prev,
+      carService: { ...prev.carService, [key]: value },
     }));
   }
 
@@ -429,7 +476,7 @@ function OnboardForm() {
     setSubmitting(true);
     setResult(null);
     try {
-      const { mortgageBroker, restaurant, drivingSchool, ...rest } = form;
+      const { mortgageBroker, restaurant, drivingSchool, carService, ...rest } = form;
       const industryData =
         form.industry === "mortgage_broker"
           ? mortgageBroker
@@ -437,7 +484,9 @@ function OnboardForm() {
             ? restaurant
             : form.industry === "driving_school"
               ? drivingSchool
-              : undefined;
+              : form.industry === "car_service"
+                ? carService
+                : undefined;
       const res = await fetch("/api/onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -517,6 +566,12 @@ function OnboardForm() {
                     description="Lesson types, vehicles, and calendar booking built in"
                     selected={form.industry === "driving_school"}
                     onClick={() => update("industry", "driving_school")}
+                  />
+                  <SelectCard
+                    label="Mechanic / auto service"
+                    description="Service types, loan cars, and calendar booking built in"
+                    selected={form.industry === "car_service"}
+                    onClick={() => update("industry", "car_service")}
                   />
                 </div>
               )}
@@ -892,6 +947,72 @@ function OnboardForm() {
                 </div>
               )}
 
+              {currentStep === "car_service" && (
+                <div className="space-y-5">
+                  <Field label="Services offered">
+                    <div className="flex flex-wrap gap-2">
+                      {CAR_SERVICE_TYPES.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={form.carService.service_types.includes(option.value)}
+                          onClick={() => toggleCarServiceType(option.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Makes/models serviced">
+                    <input
+                      placeholder="e.g. All makes and models, or European specialists"
+                      value={form.carService.makes_serviced}
+                      onChange={(e) => updateCarService("makes_serviced", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Typical service duration (minutes)">
+                    <input
+                      type="number"
+                      min={15}
+                      step={15}
+                      value={form.carService.typical_service_duration_minutes}
+                      onChange={(e) =>
+                        updateCarService(
+                          "typical_service_duration_minutes",
+                          Number(e.target.value) || 60
+                        )
+                      }
+                      className={inputClass}
+                    />
+                    <p className="mt-1.5 text-xs text-neutral-400">
+                      Set this to let your AI receptionist book real drop-off appointments
+                      directly on your calendar during calls.
+                    </p>
+                  </Field>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.carService.loan_car_available}
+                      onChange={(e) => updateCarService("loan_car_available", e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-sm text-neutral-700">Loan car available</span>
+                  </label>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.carService.pickup_dropoff_offered}
+                      onChange={(e) =>
+                        updateCarService("pickup_dropoff_offered", e.target.checked)
+                      }
+                      className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-sm text-neutral-700">
+                      We offer vehicle pickup/drop-off
+                    </span>
+                  </label>
+                </div>
+              )}
+
               {currentStep === "languages" && (
                 <div className="space-y-2">
                   <p className="text-sm text-neutral-500 mb-4">
@@ -992,7 +1113,9 @@ function OnboardForm() {
                           ? "Restaurant"
                           : form.industry === "driving_school"
                             ? "Driving school"
-                            : "Other business"
+                            : form.industry === "car_service"
+                              ? "Mechanic / auto service"
+                              : "Other business"
                     }
                   />
                   <ReviewRow label="Hours" value={form.business_hours || "—"} />
@@ -1020,6 +1143,12 @@ function OnboardForm() {
                           ? form.drivingSchool.instructor_names
                           : "instructors not listed"
                       } — connect Google Calendar from your dashboard to enable live booking`}
+                    />
+                  )}
+                  {form.industry === "car_service" && (
+                    <ReviewRow
+                      label="Service bookings"
+                      value={`${form.carService.typical_service_duration_minutes} min typical — connect Google Calendar from your dashboard to enable live booking`}
                     />
                   )}
                   <p className="text-sm text-neutral-500 pt-2">
