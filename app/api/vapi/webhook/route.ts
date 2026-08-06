@@ -21,6 +21,9 @@ interface VapiEndOfCallMessage {
   durationSeconds?: number;
   cost?: number;
   costBreakdown?: import("@/lib/types").CallCostBreakdown;
+  // Field location unverified live (docs.vapi.ai unreachable from this dev
+  // environment) — checking both known possible locations defensively.
+  recordingUrl?: string;
   summary?: string;
   analysis?: {
     summary?: string;
@@ -36,6 +39,7 @@ interface VapiEndOfCallMessage {
   artifact?: {
     transcript?: string;
     messages?: unknown;
+    recordingUrl?: string;
   };
 }
 
@@ -123,6 +127,7 @@ export async function POST(request: Request) {
       urgency: structured?.urgency ?? null,
       callback_requested: structured?.callbackRequested ?? false,
       sms_consent_given: structured?.smsConsent ?? false,
+      recording_url: message.recordingUrl ?? message.artifact?.recordingUrl ?? null,
       cost: message.cost ?? null,
       cost_breakdown: message.costBreakdown ?? null,
       raw_webhook_payload: rawPayload,

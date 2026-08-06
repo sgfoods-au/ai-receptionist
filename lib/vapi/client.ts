@@ -32,9 +32,17 @@ async function vapiRequest<T>(path: string, init: RequestInit): Promise<T> {
  * caller needs a human — distinct from the pre-call carrier forwarding
  * (which only applies before the AI ever answers). Omitted when no
  * owner_phone is on file, since Vapi needs a real number to dial.
+ *
+ * Uses a warm transfer (the assistant waits for the owner to pick up, then
+ * briefs them with an AI-generated summary before connecting the caller)
+ * when the business's number is Twilio-based — Vapi's warm transfer only
+ * works on Twilio telephony, not Vapi-hosted numbers, so US Vapi-hosted
+ * numbers fall back to a plain blind transfer.
  */
 function transferTools(business: Business) {
   if (!business.owner_phone) return [];
+  const isTwilioNumber = business.vapi_phone_number?.startsWith("+61");
+
   return [
     {
       type: "transferCall",
@@ -43,8 +51,50 @@ function transferTools(business: Business) {
           type: "number",
           number: business.owner_phone,
           message: "Sure, let me get you through to someone now.",
+          ...(isTwilioNumber
+            ? {
+                transferPlan: {
+                  mode: "warm-transfer-wait-for-operator-to-speak-first-and-then-say-summary",
+                },
+              }
+            : {}),
         },
       ],
+    },
+  ];
+}
+
+/**
+ * Lets the assistant text the caller a relevant link mid-call — the
+ * website, pricing info, or directions — instead of just describing it out
+ * loud. Only offered when there's something real to send.
+ */
+function sendLinkTools(business: Business, webhookUrl: string, webhookSecret: string) {
+  const availableLinks: string[] = [];
+  if (business.website_url) availableLinks.push("website");
+  if (business.pricing_info) availableLinks.push("pricing");
+  if (business.service_area) availableLinks.push("directions");
+  if (!availableLinks.length) return [];
+
+  const toolsWebhookUrl = webhookUrl.replace(/\/api\/vapi\/webhook$/, "/api/vapi/tools/send-link");
+
+  return [
+    {
+      type: "function",
+      function: {
+        name: "send_link",
+        description:
+          "Texts the caller a useful link or info — the website, pricing details, or directions — instead of reading it out loud. Only call this after the caller confirms they want it texted and you have their number.",
+        parameters: {
+          type: "object",
+          properties: {
+            linkType: { type: "string", enum: availableLinks },
+            customerPhone: { type: "string" },
+          },
+          required: ["linkType", "customerPhone"],
+        },
+      },
+      server: { url: toolsWebhookUrl, secret: webhookSecret },
     },
   ];
 }
@@ -158,6 +208,7 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
         ...transferTools(business),
         ...bookAppointmentTools(business, webhookUrl, webhookSecret),
         ...bookReservationTools(business, webhookUrl, webhookSecret),
+        ...sendLinkTools(business, webhookUrl, webhookSecret),
       ],
     },
     voice: {

@@ -78,6 +78,7 @@ export interface Call {
   email_sent_at: string | null;
   sms_sent: boolean;
   sms_consent_given: boolean;
+  recording_url: string | null;
   cost: number | null;
   cost_breakdown: CallCostBreakdown | null;
   raw_webhook_payload: unknown;
