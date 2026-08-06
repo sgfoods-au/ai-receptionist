@@ -1,4 +1,4 @@
-import type { Business, MortgageBrokerData, RestaurantData } from "@/lib/types";
+import type { Business, DrivingSchoolData, MortgageBrokerData, RestaurantData } from "@/lib/types";
 
 /** Builds the system prompt fed to the Vapi assistant from a business's onboarding data. */
 export function buildSystemPrompt(business: Business): string {
@@ -13,8 +13,15 @@ export function buildSystemPrompt(business: Business): string {
     ? "\nIf the caller explicitly insists on speaking to a real person, or asks something clearly outside what you can resolve from the information above, offer to transfer them to the owner now using the transferCall tool, rather than just taking a message.\n"
     : "";
 
+  const drivingSchoolData =
+    business.industry === "driving_school"
+      ? (business.industry_data as DrivingSchoolData | null)
+      : null;
+
   const bookingSection = business.google_calendar_connected
-    ? "\nYou can book real appointments on the business's calendar. When a caller wants to schedule something, agree on a specific date, time, and what it's for, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. If the tool reports the slot is taken, ask the caller for another time and try again.\n"
+    ? drivingSchoolData
+      ? `\nYou can book real driving lessons on the business's calendar. When a caller wants to book a lesson, agree on a specific date and time, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Lessons are typically ${drivingSchoolData.lesson_duration_minutes} minutes unless the caller asks for something different. If the tool reports the slot is taken, ask the caller for another time and try again.\n`
+      : "\nYou can book real appointments on the business's calendar. When a caller wants to schedule something, agree on a specific date, time, and what it's for, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. If the tool reports the slot is taken, ask the caller for another time and try again.\n"
     : "";
 
   const sendLinkSection =
@@ -58,7 +65,14 @@ ${
     ? `\nFull menu (use this for prices, dish details, and suggestions — don't invent items not listed here):\n${restaurantData.menu_extracted_text}\n`
     : ""
 }\n`
-      : "";
+      : drivingSchoolData
+        ? `\nLesson types offered: ${drivingSchoolData.lesson_types?.length ? drivingSchoolData.lesson_types.join(", ") : "Not specified"}
+Vehicle types available: ${drivingSchoolData.vehicle_types?.length ? drivingSchoolData.vehicle_types.join(", ") : "Not specified"}
+License classes taught: ${drivingSchoolData.license_classes?.length ? drivingSchoolData.license_classes.join(", ") : "Not specified"}
+Instructors: ${drivingSchoolData.instructor_names || "Not specified"}
+Standard lesson length: ${drivingSchoolData.lesson_duration_minutes} minutes
+Pickup provided: ${drivingSchoolData.pickup_provided ? "Yes" : "No"}\n`
+        : "";
 
   return `You are the AI receptionist for ${business.name}.
 

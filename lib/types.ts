@@ -3,7 +3,7 @@ export interface Faq {
   answer: string;
 }
 
-export type Industry = "other" | "mortgage_broker" | "restaurant";
+export type Industry = "other" | "mortgage_broker" | "restaurant" | "driving_school";
 
 export interface MortgageBrokerData {
   loan_types: string[];
@@ -26,6 +26,15 @@ export interface RestaurantData {
   pickup_city: string;
   pickup_state: string;
   pickup_zip: string;
+}
+
+export interface DrivingSchoolData {
+  lesson_types: string[];
+  vehicle_types: string[];
+  license_classes: string[];
+  instructor_names: string;
+  lesson_duration_minutes: number;
+  pickup_provided: boolean;
 }
 
 /**
@@ -59,7 +68,7 @@ export interface Business {
   languages: string[];
   voice_id: string;
   industry: Industry;
-  industry_data: MortgageBrokerData | RestaurantData | null;
+  industry_data: MortgageBrokerData | RestaurantData | DrivingSchoolData | null;
   system_prompt: string | null;
   vapi_assistant_id: string | null;
   vapi_phone_number_id: string | null;
@@ -143,7 +152,7 @@ export interface BusinessOnboardingInput {
   languages?: string[];
   voice_id?: string;
   industry?: Industry;
-  industry_data?: MortgageBrokerData | RestaurantData;
+  industry_data?: MortgageBrokerData | RestaurantData | DrivingSchoolData;
 }
 
 export interface ScrapedBusinessInfo {

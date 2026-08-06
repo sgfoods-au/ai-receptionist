@@ -106,6 +106,11 @@ const INDUSTRIES = [
       "Table reservations, menu questions, daily specials, and delivery dispatch — all handled on the call.",
   },
   {
+    title: "Driving schools",
+    description:
+      "Callers can book real lessons straight onto your instructor's calendar — lesson type, vehicle, and license class all handled.",
+  },
+  {
     title: "Any small business",
     description:
       "If customers call you, Oviflow can answer for you — the setup adapts to what your business actually does.",

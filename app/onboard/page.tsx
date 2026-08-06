@@ -6,7 +6,7 @@ import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
 import { SUPPORTED_LANGUAGES } from "@/lib/vapi/languages";
 import { VOICES, DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
 import { AnimatedLines, CARD, INPUT, Logo, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
-import type { Faq, Industry, MortgageBrokerData, RestaurantData } from "@/lib/types";
+import type { DrivingSchoolData, Faq, Industry, MortgageBrokerData, RestaurantData } from "@/lib/types";
 
 const LOAN_TYPES = [
   { value: "home", label: "Home loans" },
@@ -22,6 +22,25 @@ const DIETARY_OPTIONS = [
   { value: "halal", label: "Halal" },
   { value: "kosher", label: "Kosher" },
   { value: "dairy_free", label: "Dairy-free" },
+];
+
+const LESSON_TYPES = [
+  { value: "standard", label: "Standard lesson" },
+  { value: "test_prep", label: "Test prep" },
+  { value: "defensive", label: "Defensive driving" },
+  { value: "highway", label: "Highway driving" },
+  { value: "refresher", label: "Refresher course" },
+];
+
+const VEHICLE_TYPES = [
+  { value: "manual", label: "Manual" },
+  { value: "automatic", label: "Automatic" },
+];
+
+const LICENSE_CLASSES = [
+  { value: "car", label: "Car" },
+  { value: "motorcycle", label: "Motorcycle" },
+  { value: "truck", label: "Truck" },
 ];
 
 const LANGUAGES = SUPPORTED_LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
@@ -40,6 +59,7 @@ interface FormState {
   industry: Industry;
   mortgageBroker: MortgageBrokerData;
   restaurant: RestaurantData;
+  drivingSchool: DrivingSchoolData;
 }
 
 const EMPTY_FORM: FormState = {
@@ -75,6 +95,14 @@ const EMPTY_FORM: FormState = {
     pickup_state: "",
     pickup_zip: "",
   },
+  drivingSchool: {
+    lesson_types: [],
+    vehicle_types: [],
+    license_classes: [],
+    instructor_names: "",
+    lesson_duration_minutes: 60,
+    pickup_provided: false,
+  },
 };
 
 type StepId =
@@ -84,6 +112,7 @@ type StepId =
   | "details"
   | "mortgage"
   | "restaurant"
+  | "driving_school"
   | "languages"
   | "voice"
   | "review";
@@ -95,6 +124,7 @@ const STEP_TITLES: Record<StepId, string> = {
   details: "What you offer",
   mortgage: "Broker details",
   restaurant: "Restaurant profile",
+  driving_school: "Driving school profile",
   languages: "Languages",
   voice: "Choose a voice",
   review: "Review & activate",
@@ -160,6 +190,7 @@ function OnboardForm() {
     const base: StepId[] = ["type", "website", "basics", "details"];
     if (form.industry === "mortgage_broker") base.push("mortgage");
     if (form.industry === "restaurant") base.push("restaurant");
+    if (form.industry === "driving_school") base.push("driving_school");
     base.push("languages", "voice", "review");
     return base;
   }, [form.industry]);
@@ -229,6 +260,52 @@ function OnboardForm() {
     setForm((prev) => ({
       ...prev,
       restaurant: { ...prev.restaurant, [key]: value },
+    }));
+  }
+
+  function toggleLessonType(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      drivingSchool: {
+        ...prev.drivingSchool,
+        lesson_types: prev.drivingSchool.lesson_types.includes(value)
+          ? prev.drivingSchool.lesson_types.filter((v) => v !== value)
+          : [...prev.drivingSchool.lesson_types, value],
+      },
+    }));
+  }
+
+  function toggleVehicleType(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      drivingSchool: {
+        ...prev.drivingSchool,
+        vehicle_types: prev.drivingSchool.vehicle_types.includes(value)
+          ? prev.drivingSchool.vehicle_types.filter((v) => v !== value)
+          : [...prev.drivingSchool.vehicle_types, value],
+      },
+    }));
+  }
+
+  function toggleLicenseClass(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      drivingSchool: {
+        ...prev.drivingSchool,
+        license_classes: prev.drivingSchool.license_classes.includes(value)
+          ? prev.drivingSchool.license_classes.filter((v) => v !== value)
+          : [...prev.drivingSchool.license_classes, value],
+      },
+    }));
+  }
+
+  function updateDrivingSchool<K extends keyof DrivingSchoolData>(
+    key: K,
+    value: DrivingSchoolData[K]
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      drivingSchool: { ...prev.drivingSchool, [key]: value },
     }));
   }
 
@@ -352,13 +429,15 @@ function OnboardForm() {
     setSubmitting(true);
     setResult(null);
     try {
-      const { mortgageBroker, restaurant, ...rest } = form;
+      const { mortgageBroker, restaurant, drivingSchool, ...rest } = form;
       const industryData =
         form.industry === "mortgage_broker"
           ? mortgageBroker
           : form.industry === "restaurant"
             ? restaurant
-            : undefined;
+            : form.industry === "driving_school"
+              ? drivingSchool
+              : undefined;
       const res = await fetch("/api/onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -432,6 +511,12 @@ function OnboardForm() {
                     description="Menu, dietary options, and reservations built in"
                     selected={form.industry === "restaurant"}
                     onClick={() => update("industry", "restaurant")}
+                  />
+                  <SelectCard
+                    label="Driving school"
+                    description="Lesson types, vehicles, and calendar booking built in"
+                    selected={form.industry === "driving_school"}
+                    onClick={() => update("industry", "driving_school")}
                   />
                 </div>
               )}
@@ -730,6 +815,83 @@ function OnboardForm() {
                 </div>
               )}
 
+              {currentStep === "driving_school" && (
+                <div className="space-y-5">
+                  <Field label="Lesson types offered">
+                    <div className="flex flex-wrap gap-2">
+                      {LESSON_TYPES.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={form.drivingSchool.lesson_types.includes(option.value)}
+                          onClick={() => toggleLessonType(option.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Vehicle types available">
+                    <div className="flex flex-wrap gap-2">
+                      {VEHICLE_TYPES.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={form.drivingSchool.vehicle_types.includes(option.value)}
+                          onClick={() => toggleVehicleType(option.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="License classes taught">
+                    <div className="flex flex-wrap gap-2">
+                      {LICENSE_CLASSES.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={form.drivingSchool.license_classes.includes(option.value)}
+                          onClick={() => toggleLicenseClass(option.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Instructors">
+                    <textarea
+                      rows={2}
+                      placeholder="e.g. John (manual, car), Priya (automatic, motorcycle)"
+                      value={form.drivingSchool.instructor_names}
+                      onChange={(e) => updateDrivingSchool("instructor_names", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Standard lesson length (minutes)">
+                    <input
+                      type="number"
+                      min={15}
+                      step={15}
+                      value={form.drivingSchool.lesson_duration_minutes}
+                      onChange={(e) =>
+                        updateDrivingSchool("lesson_duration_minutes", Number(e.target.value) || 60)
+                      }
+                      className={inputClass}
+                    />
+                    <p className="mt-1.5 text-xs text-neutral-400">
+                      Set this to let your AI receptionist book real lessons directly on your
+                      calendar during calls.
+                    </p>
+                  </Field>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.drivingSchool.pickup_provided}
+                      onChange={(e) => updateDrivingSchool("pickup_provided", e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-sm text-neutral-700">
+                      We pick students up from home/school/work
+                    </span>
+                  </label>
+                </div>
+              )}
+
               {currentStep === "languages" && (
                 <div className="space-y-2">
                   <p className="text-sm text-neutral-500 mb-4">
@@ -828,7 +990,9 @@ function OnboardForm() {
                         ? "Mortgage broker"
                         : form.industry === "restaurant"
                           ? "Restaurant"
-                          : "Other business"
+                          : form.industry === "driving_school"
+                            ? "Driving school"
+                            : "Other business"
                     }
                   />
                   <ReviewRow label="Hours" value={form.business_hours || "—"} />
@@ -846,6 +1010,16 @@ function OnboardForm() {
                           ? `${form.restaurant.max_covers} seats, live booking enabled`
                           : "Not set — AI will take messages instead"
                       }
+                    />
+                  )}
+                  {form.industry === "driving_school" && (
+                    <ReviewRow
+                      label="Lessons"
+                      value={`${form.drivingSchool.lesson_duration_minutes} min · ${
+                        form.drivingSchool.instructor_names
+                          ? form.drivingSchool.instructor_names
+                          : "instructors not listed"
+                      } — connect Google Calendar from your dashboard to enable live booking`}
                     />
                   )}
                   <p className="text-sm text-neutral-500 pt-2">
