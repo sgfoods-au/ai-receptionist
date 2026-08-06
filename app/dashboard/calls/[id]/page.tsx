@@ -59,7 +59,7 @@ export default async function CallDetailPage({
         {c.recording_url && (
           <div className={`${CARD} mt-6 animate-fade-in-up`} style={{ animationDelay: "30ms" }}>
             <h2 className="font-semibold text-neutral-900 mb-3">Recording</h2>
-            <audio controls src={c.recording_url} className="w-full">
+            <audio controls src={`/api/vapi/recording/${c.id}`} className="w-full">
               Your browser doesn&apos;t support audio playback.
             </audio>
           </div>
