@@ -211,6 +211,42 @@ body {
   animation: lines-drift-reverse 24s linear infinite;
 }
 
+@keyframes lines-fade-a {
+  0%,
+  38% {
+    opacity: 1;
+  }
+  50%,
+  88% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-lines-fade-a {
+  animation: lines-fade-a 12s ease-in-out infinite;
+}
+
+@keyframes lines-fade-b {
+  0%,
+  38% {
+    opacity: 0;
+  }
+  50%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-lines-fade-b {
+  animation: lines-fade-b 12s ease-in-out infinite;
+}
+
 @keyframes ring-rotate {
   from {
     transform: rotate(0deg);

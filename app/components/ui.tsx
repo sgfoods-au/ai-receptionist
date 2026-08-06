@@ -33,21 +33,23 @@ const PARTICLES = [10, 24, 38, 52, 66, 80, 92];
 /** Extra "rich" layer for the landing/onboarding pages — two crossing sets
  * of thin violet diagonal lines, drifting in opposite directions, on top
  * of the standard PageGlow. Opt-in since it's busier than the base pages. */
+/** Two diagonal line patterns that alternate — never both visible at once,
+ * crossfading back and forth rather than crossing over each other. */
 export function AnimatedLines() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       <div
-        className="absolute inset-0 opacity-[0.07] animate-lines-drift"
+        className="absolute inset-0 animate-lines-drift animate-lines-fade-a"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(45deg, rgba(124,58,237,0.9) 0px, rgba(124,58,237,0.9) 1px, transparent 1px, transparent 40px)",
+            "repeating-linear-gradient(45deg, rgba(124,58,237,0.07) 0px, rgba(124,58,237,0.07) 1px, transparent 1px, transparent 40px)",
         }}
       />
       <div
-        className="absolute inset-0 opacity-[0.06] animate-lines-drift-reverse"
+        className="absolute inset-0 animate-lines-drift-reverse animate-lines-fade-b"
         style={{
           backgroundImage:
-            "repeating-linear-gradient(-45deg, rgba(99,102,241,0.9) 0px, rgba(99,102,241,0.9) 1px, transparent 1px, transparent 56px)",
+            "repeating-linear-gradient(-45deg, rgba(99,102,241,0.07) 0px, rgba(99,102,241,0.07) 1px, transparent 1px, transparent 56px)",
         }}
       />
     </div>
