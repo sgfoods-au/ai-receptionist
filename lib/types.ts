@@ -22,6 +22,26 @@ export interface RestaurantData {
   daily_specials: string;
   menu_photo_urls: string[];
   menu_extracted_text: string;
+  pickup_street_address: string;
+  pickup_city: string;
+  pickup_state: string;
+  pickup_zip: string;
+}
+
+/**
+ * Credentials for dispatching a courier via DoorDash Drive or Uber Direct
+ * once a phone order needs delivery — neither is self-serve, so this stays
+ * empty/inert until the business supplies their own approved merchant
+ * credentials from that platform.
+ */
+export interface DeliveryIntegration {
+  provider: "doordash" | "uber" | null;
+  doordash_developer_id?: string;
+  doordash_key_id?: string;
+  doordash_signing_secret?: string;
+  uber_customer_id?: string;
+  uber_client_id?: string;
+  uber_client_secret?: string;
 }
 
 export interface Business {
@@ -56,6 +76,7 @@ export interface Business {
   google_calendar_connected: boolean;
   google_refresh_token: string | null;
   google_calendar_email: string | null;
+  delivery_integration: DeliveryIntegration | null;
   created_at: string;
   updated_at: string;
 }

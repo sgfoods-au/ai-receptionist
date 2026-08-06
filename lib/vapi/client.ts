@@ -185,6 +185,42 @@ function bookReservationTools(business: Business, webhookUrl: string, webhookSec
 }
 
 /**
+ * Lets the assistant dispatch a DoorDash/Uber courier for a phone order —
+ * only offered once the restaurant has both a configured delivery
+ * provider (dashboard-entered credentials, since neither platform is
+ * self-serve) and a real pickup street address on file.
+ */
+function dispatchDeliveryTools(business: Business, webhookUrl: string, webhookSecret: string) {
+  const restaurantData =
+    business.industry === "restaurant" ? (business.industry_data as RestaurantData | null) : null;
+  if (!business.delivery_integration?.provider || !restaurantData?.pickup_street_address) return [];
+  const toolsWebhookUrl = webhookUrl.replace(/\/api\/vapi\/webhook$/, "/api/vapi/tools/dispatch-delivery");
+
+  return [
+    {
+      type: "function",
+      function: {
+        name: "dispatch_delivery",
+        description:
+          "Arranges a courier to deliver a phone order to the caller. Call this once you've confirmed what they want, their delivery address, and their phone number.",
+        parameters: {
+          type: "object",
+          properties: {
+            dropoffAddress: { type: "string", description: "Full delivery address." },
+            customerName: { type: "string" },
+            customerPhone: { type: "string" },
+            orderDescription: { type: "string", description: "What's being delivered." },
+            orderValueDollars: { type: "number", description: "Total order value in dollars." },
+          },
+          required: ["dropoffAddress", "customerName", "customerPhone", "orderDescription"],
+        },
+      },
+      server: { url: toolsWebhookUrl, secret: webhookSecret },
+    },
+  ];
+}
+
+/**
  * Fields common to both create and update: the parts driven by business
  * onboarding data, including voice/language — the onboarding UI's voice
  * and language pickers are the source of truth, so these sync on every
@@ -210,6 +246,7 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
         ...bookAppointmentTools(business, webhookUrl, webhookSecret),
         ...bookReservationTools(business, webhookUrl, webhookSecret),
         ...sendLinkTools(business, webhookUrl, webhookSecret),
+        ...dispatchDeliveryTools(business, webhookUrl, webhookSecret),
       ],
     },
     voice: {

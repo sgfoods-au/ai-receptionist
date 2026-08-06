@@ -28,6 +28,13 @@ export function buildSystemPrompt(business: Business): string {
       ? "\nYou can book real table reservations directly. When a caller wants to reserve a table, agree on a specific date, time, and party size, then call the book_reservation tool to actually create it — don't just say you'll pass along a request. If the tool reports no tables are available at that time, ask the caller for another time and try again.\n"
       : "";
 
+  const deliverySection =
+    business.industry === "restaurant" &&
+    business.delivery_integration?.provider &&
+    (business.industry_data as RestaurantData | null)?.pickup_street_address
+      ? "\nYou can arrange real delivery. When a caller wants their order delivered, confirm what they want, their delivery address, and their phone number, then call the dispatch_delivery tool to actually book the courier — don't just say you'll arrange it.\n"
+      : "";
+
   const mortgageBrokerData =
     business.industry === "mortgage_broker"
       ? (business.industry_data as MortgageBrokerData | null)
@@ -82,5 +89,5 @@ ${
 If the caller asks for something outside what's listed above (e.g. a specific
 quote, scheduling a specific time slot), say that the owner will confirm
 details on callback rather than guessing.
-${transferSection}${bookingSection}${reservationSection}${sendLinkSection}`;
+${transferSection}${bookingSection}${reservationSection}${deliverySection}${sendLinkSection}`;
 }

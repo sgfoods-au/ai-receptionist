@@ -70,6 +70,10 @@ const EMPTY_FORM: FormState = {
     daily_specials: "",
     menu_photo_urls: [],
     menu_extracted_text: "",
+    pickup_street_address: "",
+    pickup_city: "",
+    pickup_state: "",
+    pickup_zip: "",
   },
 };
 
@@ -690,6 +694,38 @@ function OnboardForm() {
                       onChange={(e) => updateRestaurant("delivery_takeout", e.target.value)}
                       className={inputClass}
                     />
+                  </Field>
+                  <Field label="Pickup address (for courier dispatch, optional)">
+                    <input
+                      placeholder="Street address"
+                      value={form.restaurant.pickup_street_address}
+                      onChange={(e) => updateRestaurant("pickup_street_address", e.target.value)}
+                      className={inputClass}
+                    />
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      <input
+                        placeholder="City"
+                        value={form.restaurant.pickup_city}
+                        onChange={(e) => updateRestaurant("pickup_city", e.target.value)}
+                        className={inputClass}
+                      />
+                      <input
+                        placeholder="State"
+                        value={form.restaurant.pickup_state}
+                        onChange={(e) => updateRestaurant("pickup_state", e.target.value)}
+                        className={inputClass}
+                      />
+                      <input
+                        placeholder="Postcode"
+                        value={form.restaurant.pickup_zip}
+                        onChange={(e) => updateRestaurant("pickup_zip", e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                    <p className="mt-1.5 text-xs text-neutral-400">
+                      Only needed if you want the AI to arrange DoorDash/Uber delivery for phone
+                      orders — set that up from your dashboard after activating.
+                    </p>
                   </Field>
                 </div>
               )}
