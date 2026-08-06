@@ -1,10 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { getUsdToAudRate, formatAud } from "@/lib/currency";
 import { PageGlow, StatCard } from "@/app/components/ui";
 import type { Call } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Call log", robots: { index: false, follow: false } };
 
 const URGENCY_STYLES: Record<string, string> = {
   high: "bg-red-50 text-red-700 ring-1 ring-red-200",

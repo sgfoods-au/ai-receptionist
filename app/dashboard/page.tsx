@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { SignOutButton } from "@/app/components/SignOutButton";
 import { CallRoutingCard } from "@/app/dashboard/components/CallRoutingCard";
@@ -10,6 +11,10 @@ import { Logo } from "@/app/components/ui";
 import type { Business, Reservation } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+};
 
 const STATUS_STYLES: Record<Business["status"], string> = {
   active: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",

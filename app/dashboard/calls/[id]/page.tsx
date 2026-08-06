@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { getUsdToAudRate, formatAud } from "@/lib/currency";
 import { CARD, PageGlow } from "@/app/components/ui";
 import type { Call } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Call detail", robots: { index: false, follow: false } };
 
 export default async function CallDetailPage({
   params,

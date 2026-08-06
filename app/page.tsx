@@ -77,9 +77,26 @@ const INDUSTRIES = [
   },
 ];
 
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Oviflow",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "AI phone receptionist for Australian small businesses — answers calls 24/7, books appointments, and emails or texts call details.",
+  offers: { "@type": "Offer", price: "39", priceCurrency: "AUD" },
+  countryOfOrigin: { "@type": "Country", name: "Australia" },
+  areaServed: { "@type": "Country", name: "Australia" },
+};
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-neutral-900 relative overflow-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <PageGlow />
       <AnimatedLines />
 
@@ -103,7 +120,10 @@ export default function Home() {
           {/* Hero */}
           <section className="flex flex-col-reverse items-center gap-10 py-16 md:flex-row md:justify-between md:py-24">
             <div className="max-w-xl text-center md:text-left animate-fade-in-up">
-              <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+              <span className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-violet-700">
+                🇦🇺 Made in Australia, for Australian businesses
+              </span>
+              <h1 className="mt-5 text-4xl font-semibold tracking-tight md:text-5xl">
                 Never miss a customer call again
               </h1>
               <p className="mt-5 text-lg text-neutral-500">

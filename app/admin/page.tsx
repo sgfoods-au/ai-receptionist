@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { isAdminEmail } from "@/lib/admin";
@@ -7,6 +8,7 @@ import { Logo, PageGlow, StatCard, StatusPill } from "@/app/components/ui";
 import type { Business, Call } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 
 interface BusinessStats {
   business: Business;
