@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
 import { SUPPORTED_LANGUAGES } from "@/lib/vapi/languages";
 import { VOICES, DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
@@ -93,18 +93,59 @@ const STEP_TITLES: Record<StepId, string> = {
   review: "Review & activate",
 };
 
-export default function OnboardPage() {
+function OnboardForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [stepIndex, setStepIndex] = useState(0);
   const [scraping, setScraping] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [livePhone, setLivePhone] = useState<string | null>(null);
   const [previewNumber, setPreviewNumber] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewResult, setPreviewResult] = useState<{ success: boolean; message: string } | null>(
     null
   );
+  const [gbpError, setGbpError] = useState(false);
+
+  // Consume the Google Business Profile import redirect (see
+  // app/api/google/business-profile/callback) — the fetched fields arrive
+  // as a base64url query param rather than a persisted server-side record,
+  // since this is a one-shot onboarding auto-fill, not an ongoing connection.
+  useEffect(() => {
+    const gbp = searchParams.get("gbp");
+    const gbpErrorParam = searchParams.get("gbp_error");
+
+    if (gbp) {
+      try {
+        const fields = JSON.parse(decodeBase64Url(gbp));
+        // Deferred a tick so this reads as syncing external (URL) state into
+        // the form rather than a direct synchronous setState in the effect body.
+        setTimeout(() => {
+          setForm((prev) => ({
+            ...prev,
+            services: fields.services || prev.services,
+            business_hours: fields.business_hours || prev.business_hours,
+            service_area: fields.service_area || prev.service_area,
+            website_url: fields.website_url || prev.website_url,
+            owner_phone: fields.owner_phone || prev.owner_phone,
+          }));
+          setResult({
+            success: true,
+            message: "Pre-filled from your Google Business Profile — review and edit as needed.",
+          });
+        }, 0);
+      } catch {
+        setTimeout(() => setGbpError(true), 0);
+      }
+      router.replace("/onboard");
+    } else if (gbpErrorParam) {
+      setTimeout(() => setGbpError(true), 0);
+      router.replace("/onboard");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const steps = useMemo<StepId[]>(() => {
     const base: StepId[] = ["type", "website", "basics", "details"];
@@ -286,6 +327,7 @@ export default function OnboardPage() {
       }
 
       const phone = data.business?.vapi_phone_number;
+      setLivePhone(phone ?? null);
       setResult({
         success: true,
         message: phone
@@ -371,6 +413,23 @@ export default function OnboardPage() {
                       {scraping ? "Reading..." : "Pre-fill"}
                     </button>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-neutral-200" />
+                    <span className="text-xs text-neutral-400">or</span>
+                    <div className="h-px flex-1 bg-neutral-200" />
+                  </div>
+                  <a
+                    href="/api/google/business-profile/start"
+                    className="block w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-center text-sm font-medium text-neutral-700 hover:border-violet-200 hover:bg-violet-50 transition-colors"
+                  >
+                    Import from Google Business Profile
+                  </a>
+                  {gbpError && (
+                    <p className="text-sm text-red-600">
+                      Couldn&apos;t import from Google Business Profile — try again or fill in
+                      manually.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -689,6 +748,20 @@ export default function OnboardPage() {
           )}
         </div>
 
+        {result?.success && livePhone && (
+          <div className={`mt-6 ${CARD} bg-violet-50/60 border-violet-200`}>
+            <p className="font-medium text-neutral-900">Try it before you share it</p>
+            <p className="mt-1 text-sm text-neutral-600">
+              Call <span className="font-mono text-violet-700">{livePhone}</span> right now and
+              hear how your AI receptionist sounds and responds — before giving the number to
+              customers.
+            </p>
+            <a href={`tel:${livePhone}`} className={`mt-4 inline-block ${PRIMARY_BTN}`}>
+              Call {livePhone} now
+            </a>
+          </div>
+        )}
+
         {result?.success && result.message.includes("live at") && (
           <button
             type="button"
@@ -703,7 +776,22 @@ export default function OnboardPage() {
   );
 }
 
+export default function OnboardPage() {
+  return (
+    <Suspense>
+      <OnboardForm />
+    </Suspense>
+  );
+}
+
 const inputClass = INPUT;
+
+function decodeBase64Url(value: string): string {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(base64);
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
 
 function ProgressBar({ current, total }: { current: number; total: number }) {
   return (
