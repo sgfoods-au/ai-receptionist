@@ -384,6 +384,24 @@ export async function releaseVapiNumber(phoneNumberId: string): Promise<void> {
 }
 
 /**
+ * Re-points an already-imported Twilio number's assistant-request webhook
+ * (see importTwilioNumber above) at a new base URL — needed when
+ * APP_BASE_URL changes after numbers have already been imported.
+ */
+export async function updatePhoneNumberServerUrl(
+  phoneNumberId: string,
+  assistantRequestWebhookUrl: string,
+  webhookSecret: string
+): Promise<void> {
+  await vapiRequest<void>(`/phone-number/${phoneNumberId}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      server: { url: assistantRequestWebhookUrl, secret: webhookSecret },
+    }),
+  });
+}
+
+/**
  * Places a short outbound call from the business's own number to let the
  * owner hear a voice before committing to it, using a transient assistant
  * (not persisted — just described inline in the call request) that reads
