@@ -103,6 +103,7 @@ function OnboardForm() {
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
   const [livePhone, setLivePhone] = useState<string | null>(null);
   const [previewNumber, setPreviewNumber] = useState("");
+  const [previewLanguage, setPreviewLanguage] = useState("en");
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewResult, setPreviewResult] = useState<{ success: boolean; message: string } | null>(
     null
@@ -226,13 +227,18 @@ function OnboardForm() {
   async function handlePreviewCall() {
     const number = previewNumber || form.owner_phone;
     if (!number) return;
+    const language = form.languages.includes(previewLanguage) ? previewLanguage : form.languages[0] ?? "en";
     setPreviewLoading(true);
     setPreviewResult(null);
     try {
       const res = await fetch("/api/vapi/voice-preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voiceId: form.voice_id, phoneNumber: number }),
+        body: JSON.stringify({
+          voiceId: form.voice_id,
+          phoneNumber: number,
+          language,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to start preview call.");
@@ -641,6 +647,22 @@ function OnboardForm() {
                       Only works once your number is connected — finish setup first if this is
                       your first time.
                     </p>
+                    {form.languages.length > 1 && (
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {form.languages.map((code) => (
+                          <Pill
+                            key={code}
+                            label={LANGUAGES.find((l) => l.value === code)?.label ?? code}
+                            selected={
+                              (form.languages.includes(previewLanguage)
+                                ? previewLanguage
+                                : form.languages[0]) === code
+                            }
+                            onClick={() => setPreviewLanguage(code)}
+                          />
+                        ))}
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <input
                         type="tel"

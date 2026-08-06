@@ -1,6 +1,7 @@
 import type { Business, RestaurantData } from "@/lib/types";
 import { buildSystemPrompt } from "@/lib/vapi/prompt";
 import { DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
+import { previewGreeting } from "@/lib/vapi/previewGreetings";
 
 const VAPI_BASE_URL = "https://api.vapi.ai";
 
@@ -360,7 +361,8 @@ export async function previewVoice(
   phoneNumberId: string,
   toNumber: string,
   voiceId: string,
-  businessName: string
+  businessName: string,
+  language: string = "en"
 ): Promise<void> {
   await vapiRequest<unknown>("/call", {
     method: "POST",
@@ -369,7 +371,7 @@ export async function previewVoice(
       customer: { number: toNumber },
       assistant: {
         name: "Voice preview",
-        firstMessage: `Hi! This is a preview of this voice for ${businessName}'s AI receptionist. This is what your callers will hear. Have a great day!`,
+        firstMessage: previewGreeting(language, businessName),
         model: {
           provider: "anthropic",
           model: "claude-3-5-sonnet-20241022",
@@ -381,7 +383,7 @@ export async function previewVoice(
             },
           ],
         },
-        voice: { provider: "vapi", voiceId, language: "en" },
+        voice: { provider: "vapi", voiceId, language },
         endCallFunctionEnabled: true,
       },
     }),
