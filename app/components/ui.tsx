@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 export const CARD =
@@ -17,14 +18,16 @@ export const INPUT =
 
 export function Logo({ className = "h-7 w-auto" }: { className?: string }) {
   return (
-    <Image
-      src="/oviflow-wordmark.png"
-      alt="Oviflow"
-      width={1015}
-      height={291}
-      priority
-      className={className}
-    />
+    <Link href="/" className="inline-block" aria-label="Oviflow home">
+      <Image
+        src="/oviflow-wordmark.png"
+        alt="Oviflow"
+        width={1015}
+        height={291}
+        priority
+        className={className}
+      />
+    </Link>
   );
 }
 
