@@ -4,6 +4,7 @@ import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { isAdminEmail } from "@/lib/admin";
 import { getUsdToAudRate, formatAud } from "@/lib/currency";
+import { getRevenueByCustomer } from "@/lib/stripe/revenue";
 import { Logo, PageGlow, StatCard, StatusPill } from "@/app/components/ui";
 import type { Business, Call } from "@/lib/types";
 
@@ -14,6 +15,7 @@ interface BusinessStats {
   business: Business;
   callCount: number;
   totalCostUsd: number;
+  revenueAud: number;
   lastCallAt: string | null;
 }
 
@@ -28,10 +30,14 @@ export default async function AdminPage() {
   // Bypasses RLS on purpose — this is the one page that legitimately needs
   // to see every tenant's data, gated above by isAdminEmail.
   const admin = getSupabaseServerClient();
-  const [{ data: businesses }, { data: calls }, rate] = await Promise.all([
+  const [{ data: businesses }, { data: calls }, rate, revenueByCustomer] = await Promise.all([
     admin.from("businesses").select("*").order("created_at", { ascending: false }),
     admin.from("calls").select("business_id, cost, created_at"),
     getUsdToAudRate(),
+    getRevenueByCustomer().catch((err) => {
+      console.error("Failed to fetch Stripe revenue:", err);
+      return {} as Record<string, number>;
+    }),
   ]);
 
   const allBusinesses = (businesses ?? []) as Business[];
@@ -43,6 +49,7 @@ export default async function AdminPage() {
       business,
       callCount: businessCalls.length,
       totalCostUsd: businessCalls.reduce((sum, c) => sum + (c.cost ?? 0), 0),
+      revenueAud: business.stripe_customer_id ? (revenueByCustomer[business.stripe_customer_id] ?? 0) : 0,
       lastCallAt: businessCalls.reduce<string | null>(
         (latest, c) => (!latest || (c.created_at && c.created_at > latest) ? c.created_at : latest),
         null
@@ -51,6 +58,8 @@ export default async function AdminPage() {
   });
 
   const totalCostUsd = allCalls.reduce((sum, c) => sum + (c.cost ?? 0), 0);
+  const totalCostAud = totalCostUsd * rate;
+  const totalRevenueAud = stats.reduce((sum, s) => sum + s.revenueAud, 0);
   const activeCount = allBusinesses.filter((b) => b.status === "active").length;
   const payingCount = allBusinesses.filter((b) =>
     ["trialing", "active"].includes(b.subscription_status ?? "")
@@ -66,12 +75,14 @@ export default async function AdminPage() {
           Super admin
         </h1>
 
-        <div className="grid grid-cols-2 gap-4 mb-8 sm:mb-10 sm:grid-cols-5 animate-fade-in-up">
+        <div className="grid grid-cols-2 gap-4 mb-8 sm:mb-10 sm:grid-cols-4 lg:grid-cols-7 animate-fade-in-up">
           <StatCard label="Signed up" value={String(allBusinesses.length)} />
           <StatCard label="Active" value={String(activeCount)} />
           <StatCard label="Paying / trialing" value={String(payingCount)} />
           <StatCard label="Total calls" value={String(allCalls.length)} />
           <StatCard label="Total AI cost" value={formatAud(totalCostUsd, rate)} />
+          <StatCard label="Total revenue" value={`A$${totalRevenueAud.toFixed(2)}`} />
+          <StatCard label="Margin" value={`A$${(totalRevenueAud - totalCostAud).toFixed(2)}`} />
         </div>
 
         <div
@@ -89,11 +100,12 @@ export default async function AdminPage() {
                   <th className="py-3 px-4 font-medium">Signed up</th>
                   <th className="py-3 px-4 font-medium">Calls</th>
                   <th className="py-3 px-4 font-medium">Cost</th>
+                  <th className="py-3 px-4 font-medium">Revenue</th>
                   <th className="py-3 px-4 font-medium">Last call</th>
                 </tr>
               </thead>
               <tbody>
-                {stats.map(({ business, callCount, totalCostUsd, lastCallAt }) => (
+                {stats.map(({ business, callCount, totalCostUsd, revenueAud, lastCallAt }) => (
                   <tr key={business.id} className="border-b border-neutral-100 last:border-0 hover:bg-violet-50/30 transition-colors">
                     <td className="py-3 px-4 whitespace-nowrap font-medium text-neutral-900">
                       {business.name}
@@ -116,6 +128,9 @@ export default async function AdminPage() {
                     <td className="py-3 px-4 whitespace-nowrap text-neutral-700">
                       {formatAud(totalCostUsd, rate)}
                     </td>
+                    <td className="py-3 px-4 whitespace-nowrap font-medium text-emerald-700">
+                      A${revenueAud.toFixed(2)}
+                    </td>
                     <td className="py-3 px-4 whitespace-nowrap text-neutral-500">
                       {lastCallAt ? new Date(lastCallAt).toLocaleDateString() : "—"}
                     </td>
@@ -123,7 +138,7 @@ export default async function AdminPage() {
                 ))}
                 {stats.length === 0 && (
                   <tr>
-                    <td className="py-6 px-4 text-neutral-500" colSpan={8}>
+                    <td className="py-6 px-4 text-neutral-500" colSpan={9}>
                       No businesses signed up yet.
                     </td>
                   </tr>
