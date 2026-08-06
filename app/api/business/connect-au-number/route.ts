@@ -35,9 +35,22 @@ export async function POST() {
     return NextResponse.json({ business });
   }
 
+  const appBaseUrl = process.env.APP_BASE_URL;
+  const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
+  if (!appBaseUrl || !webhookSecret) {
+    return NextResponse.json(
+      { error: "Missing APP_BASE_URL or VAPI_WEBHOOK_SECRET environment variable." },
+      { status: 500 }
+    );
+  }
+
   try {
     const { number } = await purchaseAustralianNumber();
-    const { phoneNumberId } = await importTwilioNumber(business.vapi_assistant_id, number);
+    const { phoneNumberId } = await importTwilioNumber(
+      number,
+      `${appBaseUrl}/api/vapi/assistant-request`,
+      webhookSecret
+    );
 
     const oldPhoneNumberId = business.vapi_phone_number_id;
     const wasUsNumber = business.vapi_phone_number?.startsWith("+1");

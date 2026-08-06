@@ -256,14 +256,19 @@ export async function provisionPhoneNumber(
 }
 
 /**
- * Imports an already-purchased Twilio number into Vapi and attaches it to
- * the given assistant. Twilio auth is read from TWILIO_ACCOUNT_SID /
- * TWILIO_AUTH_TOKEN (same credentials used to purchase the number in
- * lib/twilio/client.ts).
+ * Imports an already-purchased Twilio number into Vapi. Deliberately does
+ * NOT set a fixed assistantId — instead points the number at our
+ * assistant-request webhook (app/api/vapi/assistant-request/route.ts),
+ * which Vapi calls before answering each inbound call so we can reject
+ * known spam numbers before they ever reach the assistant, then hand back
+ * the business's real assistantId to proceed. Twilio auth is read from
+ * TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN (same credentials used to purchase
+ * the number in lib/twilio/client.ts).
  */
 export async function importTwilioNumber(
-  assistantId: string,
-  number: string
+  number: string,
+  assistantRequestWebhookUrl: string,
+  webhookSecret: string
 ): Promise<{ phoneNumberId: string; number: string }> {
   const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
   const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -278,7 +283,7 @@ export async function importTwilioNumber(
       number,
       twilioAccountSid,
       twilioAuthToken,
-      assistantId,
+      server: { url: assistantRequestWebhookUrl, secret: webhookSecret },
     }),
   });
   return { phoneNumberId: imported.id, number: imported.number };

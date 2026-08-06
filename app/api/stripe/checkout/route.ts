@@ -62,7 +62,15 @@ export async function POST(request: Request) {
         // Metered price — no quantity, Stripe bills it from reported meter usage.
         { price: plan.overageStripePriceId },
       ],
-      subscription_data: { trial_period_days: 14 },
+      // No card required to start the trial — matches RingJenny's "7-day
+      // trial, no credit card" positioning. If the trial ends with no
+      // payment method on file, Stripe cancels the subscription rather
+      // than trying (and failing) to charge nothing.
+      payment_method_collection: "if_required",
+      subscription_data: {
+        trial_period_days: 14,
+        trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
+      },
       success_url: `${appBaseUrl}/dashboard?checkout=success`,
       cancel_url: `${appBaseUrl}/dashboard?checkout=cancelled`,
       client_reference_id: business.id,
