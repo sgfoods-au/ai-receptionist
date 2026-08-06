@@ -43,8 +43,14 @@ Licensed to operate in: ${mortgageBrokerData.licensed_regions || "Not specified"
     : restaurantData
       ? `\nDietary options catered for: ${restaurantData.dietary_options?.length ? restaurantData.dietary_options.join(", ") : "Not specified"}
 Menu highlights: ${restaurantData.menu_highlights || "Not specified"}
+Today's specials: ${restaurantData.daily_specials || "Not specified"}
 Reservation policy: ${restaurantData.reservation_policy || "Not specified"}
-Delivery/takeout options: ${restaurantData.delivery_takeout || "Not specified"}\n`
+Delivery/takeout options: ${restaurantData.delivery_takeout || "Not specified"}
+${
+  restaurantData.menu_extracted_text
+    ? `\nFull menu (use this for prices, dish details, and suggestions — don't invent items not listed here):\n${restaurantData.menu_extracted_text}\n`
+    : ""
+}\n`
       : "";
 
   return `You are the AI receptionist for ${business.name}.

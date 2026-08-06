@@ -19,6 +19,9 @@ export interface RestaurantData {
   delivery_takeout: string;
   max_covers: number;
   reservation_duration_minutes: number;
+  daily_specials: string;
+  menu_photo_urls: string[];
+  menu_extracted_text: string;
 }
 
 export interface Business {

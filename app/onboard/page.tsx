@@ -67,6 +67,9 @@ const EMPTY_FORM: FormState = {
     delivery_takeout: "",
     max_covers: 0,
     reservation_duration_minutes: 90,
+    daily_specials: "",
+    menu_photo_urls: [],
+    menu_extracted_text: "",
   },
 };
 
@@ -109,6 +112,7 @@ function OnboardForm() {
     null
   );
   const [gbpError, setGbpError] = useState(false);
+  const [menuUploading, setMenuUploading] = useState(false);
 
   // Consume the Google Business Profile import redirect (see
   // app/api/google/business-profile/callback) — the fetched fields arrive
@@ -222,6 +226,38 @@ function OnboardForm() {
       ...prev,
       restaurant: { ...prev.restaurant, [key]: value },
     }));
+  }
+
+  async function handleMenuPhotoUpload(files: FileList | null) {
+    if (!files || !files.length) return;
+    setMenuUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const body = new FormData();
+        body.append("file", file);
+        const res = await fetch("/api/restaurant/menu-photo", { method: "POST", body });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Failed to upload menu photo.");
+
+        setForm((prev) => ({
+          ...prev,
+          restaurant: {
+            ...prev.restaurant,
+            menu_photo_urls: [...prev.restaurant.menu_photo_urls, data.url],
+            menu_extracted_text: [prev.restaurant.menu_extracted_text, data.extractedText]
+              .filter(Boolean)
+              .join("\n\n"),
+          },
+        }));
+      }
+    } catch (err) {
+      setResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Failed to upload menu photo.",
+      });
+    } finally {
+      setMenuUploading(false);
+    }
   }
 
   async function handlePreviewCall() {
@@ -556,6 +592,61 @@ function OnboardForm() {
                       onChange={(e) => updateRestaurant("menu_highlights", e.target.value)}
                       className={inputClass}
                     />
+                  </Field>
+                  <Field label="Specials of the day (optional)">
+                    <textarea
+                      rows={2}
+                      placeholder="e.g. Tuesday: 2-for-1 pizzas. Today: fresh barramundi special $28."
+                      value={form.restaurant.daily_specials}
+                      onChange={(e) => updateRestaurant("daily_specials", e.target.value)}
+                      className={inputClass}
+                    />
+                    <p className="mt-1.5 text-xs text-neutral-400">
+                      Update this any time from your dashboard — the AI mentions it when callers
+                      ask what&apos;s on today.
+                    </p>
+                  </Field>
+                  <Field label="Menu photos (optional)">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handleMenuPhotoUpload(e.target.files)}
+                      disabled={menuUploading}
+                      className={inputClass}
+                    />
+                    <p className="mt-1.5 text-xs text-neutral-400">
+                      Upload photos of your menu (multiple pages ok) — we&apos;ll read the dishes
+                      and prices so your AI can take orders and suggest items accurately.
+                    </p>
+                    {menuUploading && (
+                      <p className="mt-2 text-xs text-violet-600">Reading menu...</p>
+                    )}
+                    {form.restaurant.menu_photo_urls.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {form.restaurant.menu_photo_urls.map((url, i) => (
+                          <a
+                            key={url}
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs text-neutral-600 hover:border-violet-200 hover:bg-violet-50"
+                          >
+                            Page {i + 1}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                    {form.restaurant.menu_extracted_text && (
+                      <Field label="Extracted menu text (edit if anything looks wrong)">
+                        <textarea
+                          rows={4}
+                          value={form.restaurant.menu_extracted_text}
+                          onChange={(e) => updateRestaurant("menu_extracted_text", e.target.value)}
+                          className={`${inputClass} mt-2`}
+                        />
+                      </Field>
+                    )}
                   </Field>
                   <Field label="Reservation policy">
                     <textarea
