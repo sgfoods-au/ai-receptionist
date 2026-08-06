@@ -78,6 +78,7 @@ export interface Business {
   pricing_info: string | null;
   service_area: string | null;
   faqs: Faq[] | null;
+  additional_notes: string | null;
   languages: string[];
   voice_id: string;
   industry: Industry;
@@ -162,6 +163,7 @@ export interface BusinessOnboardingInput {
   pricing_info?: string;
   service_area?: string;
   faqs?: Faq[];
+  additional_notes?: string;
   languages?: string[];
   voice_id?: string;
   industry?: Industry;

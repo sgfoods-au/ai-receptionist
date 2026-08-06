@@ -100,6 +100,7 @@ Services offered: ${business.services || "Not specified"}
 Pricing info: ${business.pricing_info || "Not specified"}
 Service area: ${business.service_area || "Not specified"}
 ${industrySection}${faqLines ? `\nFrequently asked questions:\n${faqLines}` : ""}
+${business.additional_notes ? `\nAdditional information from the business owner:\n${business.additional_notes}\n` : ""}
 
 Your job on every call:
 1. Greet the caller warmly and find out why they're calling.

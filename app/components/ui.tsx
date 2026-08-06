@@ -16,6 +16,77 @@ export const SECONDARY_BTN =
 export const INPUT =
   "w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 outline-none transition-colors focus:border-violet-400 focus:ring-2 focus:ring-violet-100";
 
+export function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-sm font-medium text-neutral-700 mb-1.5">
+        {label}
+        {required && <span className="text-violet-500"> *</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+export function Pill({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+        selected
+          ? "border-violet-300 bg-violet-50 text-violet-700"
+          : "border-neutral-200 text-neutral-500 hover:border-violet-200 hover:bg-violet-50/40"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+export function SelectCard({
+  label,
+  description,
+  selected,
+  onClick,
+}: {
+  label: string;
+  description?: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl border p-5 text-left transition-all ${
+        selected
+          ? "border-violet-400 bg-violet-50 shadow-[0_0_0_1px_rgba(139,92,246,0.3)]"
+          : "border-neutral-200 bg-white hover:border-violet-200 hover:bg-violet-50/40"
+      }`}
+    >
+      <p className="font-medium text-sm mb-1 text-neutral-900">{label}</p>
+      {description && <p className="text-xs text-neutral-500">{description}</p>}
+    </button>
+  );
+}
+
 export function Logo({ className = "h-7 w-auto" }: { className?: string }) {
   return (
     <Link href="/" className="inline-block" aria-label="Oviflow home">

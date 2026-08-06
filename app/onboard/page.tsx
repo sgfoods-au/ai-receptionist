@@ -5,7 +5,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Mascot, type MascotMood } from "@/app/onboard/components/Mascot";
 import { SUPPORTED_LANGUAGES } from "@/lib/vapi/languages";
 import { VOICES, DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
-import { AnimatedLines, CARD, INPUT, Logo, PRIMARY_BTN, PageGlow } from "@/app/components/ui";
+import {
+  AnimatedLines,
+  CARD,
+  Field,
+  INPUT,
+  Logo,
+  PRIMARY_BTN,
+  PageGlow,
+  Pill,
+  SelectCard,
+} from "@/app/components/ui";
 import type {
   CarServiceData,
   DrivingSchoolData,
@@ -14,51 +24,14 @@ import type {
   MortgageBrokerData,
   RestaurantData,
 } from "@/lib/types";
-
-const LOAN_TYPES = [
-  { value: "home", label: "Home loans" },
-  { value: "refinance", label: "Refinancing" },
-  { value: "investment", label: "Investment property" },
-  { value: "commercial", label: "Commercial loans" },
-];
-
-const DIETARY_OPTIONS = [
-  { value: "vegetarian", label: "Vegetarian" },
-  { value: "vegan", label: "Vegan" },
-  { value: "gluten_free", label: "Gluten-free" },
-  { value: "halal", label: "Halal" },
-  { value: "kosher", label: "Kosher" },
-  { value: "dairy_free", label: "Dairy-free" },
-];
-
-const LESSON_TYPES = [
-  { value: "standard", label: "Standard lesson" },
-  { value: "test_prep", label: "Test prep" },
-  { value: "defensive", label: "Defensive driving" },
-  { value: "highway", label: "Highway driving" },
-  { value: "refresher", label: "Refresher course" },
-];
-
-const VEHICLE_TYPES = [
-  { value: "manual", label: "Manual" },
-  { value: "automatic", label: "Automatic" },
-];
-
-const LICENSE_CLASSES = [
-  { value: "car", label: "Car" },
-  { value: "motorcycle", label: "Motorcycle" },
-  { value: "truck", label: "Truck" },
-];
-
-const CAR_SERVICE_TYPES = [
-  { value: "general_service", label: "General service" },
-  { value: "logbook_service", label: "Logbook service" },
-  { value: "brakes", label: "Brakes" },
-  { value: "tyres", label: "Tyres" },
-  { value: "roadworthy", label: "Roadworthy / rego check" },
-  { value: "air_con", label: "Air con" },
-  { value: "diagnostics", label: "Diagnostics" },
-];
+import {
+  CAR_SERVICE_TYPES,
+  DIETARY_OPTIONS,
+  LESSON_TYPES,
+  LICENSE_CLASSES,
+  LOAN_TYPES,
+  VEHICLE_TYPES,
+} from "@/lib/industryOptions";
 
 const LANGUAGES = SUPPORTED_LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
 
@@ -71,6 +44,7 @@ interface FormState {
   pricing_info: string;
   service_area: string;
   faqs: Faq[];
+  additional_notes: string;
   languages: string[];
   voice_id: string;
   industry: Industry;
@@ -89,6 +63,7 @@ const EMPTY_FORM: FormState = {
   pricing_info: "",
   service_area: "",
   faqs: [],
+  additional_notes: "",
   languages: ["en"],
   voice_id: DEFAULT_VOICE_ID,
   industry: "other",
@@ -668,6 +643,15 @@ function OnboardForm() {
                     <input
                       value={form.service_area}
                       onChange={(e) => update("service_area", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Anything else the AI should know (optional)">
+                    <textarea
+                      rows={3}
+                      placeholder="Policies, quirks, things customers often ask that aren't covered above — anything you'd tell a new receptionist on day one."
+                      value={form.additional_notes}
+                      onChange={(e) => update("additional_notes", e.target.value)}
                       className={inputClass}
                     />
                   </Field>
@@ -1262,82 +1246,11 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
   );
 }
 
-function SelectCard({
-  label,
-  description,
-  selected,
-  onClick,
-}: {
-  label: string;
-  description?: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-xl border p-5 text-left transition-all ${
-        selected
-          ? "border-violet-400 bg-violet-50 shadow-[0_0_0_1px_rgba(139,92,246,0.3)]"
-          : "border-neutral-200 bg-white hover:border-violet-200 hover:bg-violet-50/40"
-      }`}
-    >
-      <p className="font-medium text-sm mb-1 text-neutral-900">{label}</p>
-      {description && <p className="text-xs text-neutral-500">{description}</p>}
-    </button>
-  );
-}
-
-function Pill({
-  label,
-  selected,
-  onClick,
-}: {
-  label: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
-        selected
-          ? "border-violet-300 bg-violet-50 text-violet-700"
-          : "border-neutral-200 text-neutral-500 hover:border-violet-200 hover:bg-violet-50/40"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4 border-b border-neutral-100 pb-3 last:border-0">
       <span className="text-sm text-neutral-500">{label}</span>
       <span className="text-sm text-right max-w-[65%] text-neutral-800 font-medium">{value}</span>
     </div>
-  );
-}
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="block text-sm font-medium text-neutral-700 mb-1.5">
-        {label}
-        {required && <span className="text-violet-500"> *</span>}
-      </span>
-      {children}
-    </label>
   );
 }

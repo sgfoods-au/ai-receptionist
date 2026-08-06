@@ -106,7 +106,7 @@ export default async function DashboardPage() {
                   View call log
                 </Link>
                 <Link
-                  href="/onboard"
+                  href="/dashboard/settings"
                   className="rounded-xl border border-neutral-200 px-5 py-2.5 text-sm font-medium text-neutral-700 hover:border-violet-200 hover:bg-violet-50 transition-colors"
                 >
                   Edit business info

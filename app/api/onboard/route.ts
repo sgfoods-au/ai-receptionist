@@ -54,6 +54,7 @@ export async function POST(request: Request) {
           pricing_info: input.pricing_info ?? null,
           service_area: input.service_area ?? null,
           faqs: input.faqs ?? [],
+          additional_notes: input.additional_notes ?? null,
           languages: input.languages?.length ? input.languages : ["en"],
           voice_id: input.voice_id || "Elliot",
           industry,
