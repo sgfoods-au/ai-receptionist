@@ -220,6 +220,46 @@ export default function Home() {
             </div>
           </section>
 
+          {/* Google data use */}
+          <section className="py-16 md:py-20">
+            <div className="mx-auto max-w-3xl rounded-3xl border border-violet-100 bg-violet-50/40 p-8 sm:p-10">
+              <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
+                How Oviflow uses your Google account
+              </h2>
+              <p className="mt-4 text-neutral-600 leading-relaxed">
+                Oviflow is an AI phone receptionist. If you choose to connect your Google
+                account, we use it for two optional features, and nothing else:
+              </p>
+              <ul className="mt-4 space-y-3 text-neutral-600">
+                <li className="flex gap-3">
+                  <span className="mt-0.5 text-violet-600">•</span>
+                  <span>
+                    <strong className="text-neutral-800">Google Calendar</strong> — so your AI
+                    receptionist can check your real availability and book appointments directly
+                    onto your calendar during a call, instead of just taking a message.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-0.5 text-violet-600">•</span>
+                  <span>
+                    <strong className="text-neutral-800">Google Business Profile</strong> — a
+                    one-time, optional import during setup that pre-fills your business hours,
+                    address, and description so you don&apos;t have to type them in by hand.
+                  </span>
+                </li>
+              </ul>
+              <p className="mt-4 text-sm text-neutral-500 leading-relaxed">
+                We only request the access needed for these features, we never sell or share your
+                Google data with third parties, and you can disconnect Google Calendar at any
+                time from your dashboard. See our{" "}
+                <Link href="/privacy" className="text-violet-600 hover:underline">
+                  Privacy Policy
+                </Link>{" "}
+                for details.
+              </p>
+            </div>
+          </section>
+
           {/* How it works */}
           <section className="py-16 md:py-20">
             <h2 className="text-center text-2xl font-semibold tracking-tight md:text-3xl">
