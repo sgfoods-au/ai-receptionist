@@ -32,7 +32,10 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     const industry =
-      input.industry === "mortgage_broker" || input.industry === "restaurant"
+      input.industry === "mortgage_broker" ||
+      input.industry === "restaurant" ||
+      input.industry === "driving_school" ||
+      input.industry === "car_service"
         ? input.industry
         : "other";
 
@@ -51,11 +54,15 @@ export async function POST(request: Request) {
           pricing_info: input.pricing_info ?? null,
           service_area: input.service_area ?? null,
           faqs: input.faqs ?? [],
+          additional_notes: input.additional_notes ?? null,
           languages: input.languages?.length ? input.languages : ["en"],
           voice_id: input.voice_id || "Elliot",
           industry,
           industry_data:
-            industry === "mortgage_broker" || industry === "restaurant"
+            industry === "mortgage_broker" ||
+            industry === "restaurant" ||
+            industry === "driving_school" ||
+            industry === "car_service"
               ? (input.industry_data ?? null)
               : null,
           updated_at: new Date().toISOString(),

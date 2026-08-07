@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { getUsdToAudRate, formatAud } from "@/lib/currency";
 import { CARD, PageGlow } from "@/app/components/ui";
 import type { Call } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Call detail", robots: { index: false, follow: false } };
 
 export default async function CallDetailPage({
   params,
@@ -53,6 +55,15 @@ export default async function CallDetailPage({
             <Row label="Email sent" value={c.email_sent ? "Yes" : "No"} />
           </dl>
         </div>
+
+        {c.recording_url && (
+          <div className={`${CARD} mt-6 animate-fade-in-up`} style={{ animationDelay: "30ms" }}>
+            <h2 className="font-semibold text-neutral-900 mb-3">Recording</h2>
+            <audio controls src={`/api/vapi/recording/${c.id}`} className="w-full">
+              Your browser doesn&apos;t support audio playback.
+            </audio>
+          </div>
+        )}
 
         {c.cost_breakdown && (
           <div className={`${CARD} mt-6 animate-fade-in-up`} style={{ animationDelay: "60ms" }}>

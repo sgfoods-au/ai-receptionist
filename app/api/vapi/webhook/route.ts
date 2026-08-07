@@ -21,6 +21,9 @@ interface VapiEndOfCallMessage {
   durationSeconds?: number;
   cost?: number;
   costBreakdown?: import("@/lib/types").CallCostBreakdown;
+  // Field location unverified live (docs.vapi.ai unreachable from this dev
+  // environment) — checking both known possible locations defensively.
+  recordingUrl?: string;
   summary?: string;
   analysis?: {
     summary?: string;
@@ -36,6 +39,7 @@ interface VapiEndOfCallMessage {
   artifact?: {
     transcript?: string;
     messages?: unknown;
+    recordingUrl?: string;
   };
 }
 
@@ -123,6 +127,7 @@ export async function POST(request: Request) {
       urgency: structured?.urgency ?? null,
       callback_requested: structured?.callbackRequested ?? false,
       sms_consent_given: structured?.smsConsent ?? false,
+      recording_url: message.recordingUrl ?? message.artifact?.recordingUrl ?? null,
       cost: message.cost ?? null,
       cost_breakdown: message.costBreakdown ?? null,
       raw_webhook_payload: rawPayload,
@@ -176,6 +181,42 @@ export async function POST(request: Request) {
   } catch (err) {
     // Don't fail the webhook ack over an SMS delivery problem — the call is already logged.
     console.error("Failed to send call summary SMS:", err);
+  }
+
+  // Reactive spam flagging: a robocaller hangs up (or gets hung up on) fast,
+  // usually with little/no transcript, and usually calls again. Flag the
+  // number platform-wide after a second such short/empty call so future
+  // calls get rejected before Vapi even answers (assistant-request webhook).
+  // A single short call isn't enough signal on its own — legitimate callers
+  // misdial or hang up early too.
+  try {
+    const callerNumber = call.customer?.number;
+    const looksLikeSpam =
+      callerNumber &&
+      insertedCall.duration_seconds != null &&
+      insertedCall.duration_seconds < 6 &&
+      (!transcript || transcript.trim().length < 20);
+
+    if (looksLikeSpam) {
+      const { count } = await supabase
+        .from("calls")
+        .select("id", { count: "exact", head: true })
+        .eq("caller_number", callerNumber)
+        .lt("duration_seconds", 6);
+
+      if ((count ?? 0) >= 2) {
+        await supabase.from("spam_numbers").upsert(
+          {
+            phone_number: callerNumber,
+            reason: "Repeated short calls with no meaningful transcript",
+            flagged_at: new Date().toISOString(),
+          },
+          { onConflict: "phone_number" }
+        );
+      }
+    }
+  } catch (err) {
+    console.error("Spam-flagging heuristic failed:", err);
   }
 
   if (business.stripe_customer_id && insertedCall.duration_seconds) {

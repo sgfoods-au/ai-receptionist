@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { isSlotAvailable, createEvent } from "@/lib/google/calendar";
+import { sendSms } from "@/lib/twilio/sms";
+import { toE164Australian } from "@/lib/phone";
 import type { Business } from "@/lib/types";
 
 interface VapiToolCall {
@@ -87,9 +89,22 @@ export async function POST(request: Request) {
           [notes, customerPhone ? `Phone: ${customerPhone}` : ""].filter(Boolean).join("\n")
         );
 
+        const whenText = start.toLocaleString("en-AU", { dateStyle: "full", timeStyle: "short" });
+
+        const normalizedPhone = toE164Australian(customerPhone);
+        if (normalizedPhone) {
+          sendSms(
+            normalizedPhone,
+            `You're booked with ${business.name} for ${whenText}. Reply to this text if you need to change it.`
+          ).catch((err) => {
+            // Don't fail the booking over an SMS delivery problem.
+            console.error("Failed to send appointment confirmation SMS:", err);
+          });
+        }
+
         return {
           toolCallId: toolCall.id,
-          result: `Booked for ${start.toLocaleString("en-AU", { dateStyle: "full", timeStyle: "short" })}.`,
+          result: `Booked for ${whenText}.`,
         };
       } catch (err) {
         console.error("book_appointment tool failed:", err);

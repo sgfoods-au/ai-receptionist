@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
 import { SignOutButton } from "@/app/components/SignOutButton";
 import { CallRoutingCard } from "@/app/dashboard/components/CallRoutingCard";
@@ -6,10 +7,15 @@ import { BillingCard } from "@/app/dashboard/components/BillingCard";
 import { AppointmentsCard } from "@/app/dashboard/components/AppointmentsCard";
 import { ReservationsCard } from "@/app/dashboard/components/ReservationsCard";
 import { PhoneUpdatesCard } from "@/app/dashboard/components/PhoneUpdatesCard";
+import { DeliveryCard } from "@/app/dashboard/components/DeliveryCard";
 import { Logo } from "@/app/components/ui";
 import type { Business, Reservation } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+};
 
 const STATUS_STYLES: Record<Business["status"], string> = {
   active: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
@@ -101,7 +107,7 @@ export default async function DashboardPage() {
                   View call log
                 </Link>
                 <Link
-                  href="/onboard"
+                  href="/dashboard/settings"
                   className="rounded-xl border border-neutral-200 px-5 py-2.5 text-sm font-medium text-neutral-700 hover:border-violet-200 hover:bg-violet-50 transition-colors"
                 >
                   Edit business info
@@ -126,8 +132,13 @@ export default async function DashboardPage() {
             </div>
 
             {biz.industry === "restaurant" && (
-              <div style={{ animationDelay: "240ms" }} className="animate-fade-in-up">
-                <ReservationsCard business={biz} reservations={reservations} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                <div style={{ animationDelay: "240ms" }} className="animate-fade-in-up">
+                  <ReservationsCard business={biz} reservations={reservations} />
+                </div>
+                <div style={{ animationDelay: "300ms" }} className="animate-fade-in-up">
+                  <DeliveryCard business={biz} />
+                </div>
               </div>
             )}
           </div>

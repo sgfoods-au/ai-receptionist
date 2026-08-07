@@ -1,6 +1,7 @@
 import type { Business, RestaurantData } from "@/lib/types";
 import { buildSystemPrompt } from "@/lib/vapi/prompt";
 import { DEFAULT_VOICE_ID } from "@/lib/vapi/voices";
+import { previewGreeting } from "@/lib/vapi/previewGreetings";
 
 const VAPI_BASE_URL = "https://api.vapi.ai";
 
@@ -32,9 +33,17 @@ async function vapiRequest<T>(path: string, init: RequestInit): Promise<T> {
  * caller needs a human — distinct from the pre-call carrier forwarding
  * (which only applies before the AI ever answers). Omitted when no
  * owner_phone is on file, since Vapi needs a real number to dial.
+ *
+ * Uses a warm transfer (the assistant waits for the owner to pick up, then
+ * briefs them with an AI-generated summary before connecting the caller)
+ * when the business's number is Twilio-based — Vapi's warm transfer only
+ * works on Twilio telephony, not Vapi-hosted numbers, so US Vapi-hosted
+ * numbers fall back to a plain blind transfer.
  */
 function transferTools(business: Business) {
   if (!business.owner_phone) return [];
+  const isTwilioNumber = business.vapi_phone_number?.startsWith("+61");
+
   return [
     {
       type: "transferCall",
@@ -43,8 +52,50 @@ function transferTools(business: Business) {
           type: "number",
           number: business.owner_phone,
           message: "Sure, let me get you through to someone now.",
+          ...(isTwilioNumber
+            ? {
+                transferPlan: {
+                  mode: "warm-transfer-wait-for-operator-to-speak-first-and-then-say-summary",
+                },
+              }
+            : {}),
         },
       ],
+    },
+  ];
+}
+
+/**
+ * Lets the assistant text the caller a relevant link mid-call — the
+ * website, pricing info, or directions — instead of just describing it out
+ * loud. Only offered when there's something real to send.
+ */
+function sendLinkTools(business: Business, webhookUrl: string, webhookSecret: string) {
+  const availableLinks: string[] = [];
+  if (business.website_url) availableLinks.push("website");
+  if (business.pricing_info) availableLinks.push("pricing");
+  if (business.service_area) availableLinks.push("directions");
+  if (!availableLinks.length) return [];
+
+  const toolsWebhookUrl = webhookUrl.replace(/\/api\/vapi\/webhook$/, "/api/vapi/tools/send-link");
+
+  return [
+    {
+      type: "function",
+      function: {
+        name: "send_link",
+        description:
+          "Texts the caller a useful link or info — the website, pricing details, or directions — instead of reading it out loud. Only call this after the caller confirms they want it texted and you have their number.",
+        parameters: {
+          type: "object",
+          properties: {
+            linkType: { type: "string", enum: availableLinks },
+            customerPhone: { type: "string" },
+          },
+          required: ["linkType", "customerPhone"],
+        },
+      },
+      server: { url: toolsWebhookUrl, secret: webhookSecret },
     },
   ];
 }
@@ -181,6 +232,42 @@ function updateBusinessInfoTools(business: Business, webhookUrl: string, webhook
 }
 
 /**
+ * Lets the assistant dispatch a DoorDash/Uber courier for a phone order —
+ * only offered once the restaurant has both a configured delivery
+ * provider (dashboard-entered credentials, since neither platform is
+ * self-serve) and a real pickup street address on file.
+ */
+function dispatchDeliveryTools(business: Business, webhookUrl: string, webhookSecret: string) {
+  const restaurantData =
+    business.industry === "restaurant" ? (business.industry_data as RestaurantData | null) : null;
+  if (!business.delivery_integration?.provider || !restaurantData?.pickup_street_address) return [];
+  const toolsWebhookUrl = webhookUrl.replace(/\/api\/vapi\/webhook$/, "/api/vapi/tools/dispatch-delivery");
+
+  return [
+    {
+      type: "function",
+      function: {
+        name: "dispatch_delivery",
+        description:
+          "Arranges a courier to deliver a phone order to the caller. Call this once you've confirmed what they want, their delivery address, and their phone number.",
+        parameters: {
+          type: "object",
+          properties: {
+            dropoffAddress: { type: "string", description: "Full delivery address." },
+            customerName: { type: "string" },
+            customerPhone: { type: "string" },
+            orderDescription: { type: "string", description: "What's being delivered." },
+            orderValueDollars: { type: "number", description: "Total order value in dollars." },
+          },
+          required: ["dropoffAddress", "customerName", "customerPhone", "orderDescription"],
+        },
+      },
+      server: { url: toolsWebhookUrl, secret: webhookSecret },
+    },
+  ];
+}
+
+/**
  * Fields common to both create and update: the parts driven by business
  * onboarding data, including voice/language — the onboarding UI's voice
  * and language pickers are the source of truth, so these sync on every
@@ -206,6 +293,8 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
         ...bookAppointmentTools(business, webhookUrl, webhookSecret),
         ...bookReservationTools(business, webhookUrl, webhookSecret),
         ...updateBusinessInfoTools(business, webhookUrl, webhookSecret),
+        ...sendLinkTools(business, webhookUrl, webhookSecret),
+        ...dispatchDeliveryTools(business, webhookUrl, webhookSecret),
       ],
     },
     voice: {
@@ -304,14 +393,19 @@ export async function provisionPhoneNumber(
 }
 
 /**
- * Imports an already-purchased Twilio number into Vapi and attaches it to
- * the given assistant. Twilio auth is read from TWILIO_ACCOUNT_SID /
- * TWILIO_AUTH_TOKEN (same credentials used to purchase the number in
- * lib/twilio/client.ts).
+ * Imports an already-purchased Twilio number into Vapi. Deliberately does
+ * NOT set a fixed assistantId — instead points the number at our
+ * assistant-request webhook (app/api/vapi/assistant-request/route.ts),
+ * which Vapi calls before answering each inbound call so we can reject
+ * known spam numbers before they ever reach the assistant, then hand back
+ * the business's real assistantId to proceed. Twilio auth is read from
+ * TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN (same credentials used to purchase
+ * the number in lib/twilio/client.ts).
  */
 export async function importTwilioNumber(
-  assistantId: string,
-  number: string
+  number: string,
+  assistantRequestWebhookUrl: string,
+  webhookSecret: string
 ): Promise<{ phoneNumberId: string; number: string }> {
   const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
   const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -326,7 +420,7 @@ export async function importTwilioNumber(
       number,
       twilioAccountSid,
       twilioAuthToken,
-      assistantId,
+      server: { url: assistantRequestWebhookUrl, secret: webhookSecret },
     }),
   });
   return { phoneNumberId: imported.id, number: imported.number };
@@ -335,6 +429,24 @@ export async function importTwilioNumber(
 /** Detaches/deletes a phone number from Vapi, e.g. when replacing it with a different number. */
 export async function releaseVapiNumber(phoneNumberId: string): Promise<void> {
   await vapiRequest<void>(`/phone-number/${phoneNumberId}`, { method: "DELETE" });
+}
+
+/**
+ * Re-points an already-imported Twilio number's assistant-request webhook
+ * (see importTwilioNumber above) at a new base URL — needed when
+ * APP_BASE_URL changes after numbers have already been imported.
+ */
+export async function updatePhoneNumberServerUrl(
+  phoneNumberId: string,
+  assistantRequestWebhookUrl: string,
+  webhookSecret: string
+): Promise<void> {
+  await vapiRequest<void>(`/phone-number/${phoneNumberId}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      server: { url: assistantRequestWebhookUrl, secret: webhookSecret },
+    }),
+  });
 }
 
 /**
@@ -352,7 +464,8 @@ export async function previewVoice(
   phoneNumberId: string,
   toNumber: string,
   voiceId: string,
-  businessName: string
+  businessName: string,
+  language: string = "en"
 ): Promise<void> {
   await vapiRequest<unknown>("/call", {
     method: "POST",
@@ -361,7 +474,7 @@ export async function previewVoice(
       customer: { number: toNumber },
       assistant: {
         name: "Voice preview",
-        firstMessage: `Hi! This is a preview of this voice for ${businessName}'s AI receptionist. This is what your callers will hear. Have a great day!`,
+        firstMessage: previewGreeting(language, businessName),
         model: {
           provider: "anthropic",
           model: "claude-3-5-sonnet-20241022",
@@ -373,7 +486,7 @@ export async function previewVoice(
             },
           ],
         },
-        voice: { provider: "vapi", voiceId, language: "en" },
+        voice: { provider: "vapi", voiceId, language },
         endCallFunctionEnabled: true,
       },
     }),

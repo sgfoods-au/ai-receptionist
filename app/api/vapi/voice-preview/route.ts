@@ -14,9 +14,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const { voiceId, phoneNumber } = (await request.json()) as {
+  const { voiceId, phoneNumber, language } = (await request.json()) as {
     voiceId?: string;
     phoneNumber?: string;
+    language?: string;
   };
   if (!voiceId || !phoneNumber) {
     return NextResponse.json({ error: "voiceId and phoneNumber are required." }, { status: 400 });
@@ -44,7 +45,8 @@ export async function POST(request: Request) {
       business.vapi_phone_number_id,
       toE164Australian(phoneNumber) ?? phoneNumber,
       voiceId,
-      business.name
+      business.name,
+      language || "en"
     );
     return NextResponse.json({ ok: true });
   } catch (err) {
