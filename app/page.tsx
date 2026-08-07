@@ -281,7 +281,15 @@ export default function Home() {
         </main>
 
         <footer className="border-t border-neutral-100 py-8 text-center text-sm text-neutral-400">
-          © {new Date().getFullYear()} Oviflow
+          <p>© {new Date().getFullYear()} Oviflow</p>
+          <div className="mt-2 flex items-center justify-center gap-4">
+            <Link href="/privacy" className="hover:text-violet-600 transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-violet-600 transition-colors">
+              Terms of Service
+            </Link>
+          </div>
         </footer>
       </div>
     </div>
