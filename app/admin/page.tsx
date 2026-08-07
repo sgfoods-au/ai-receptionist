@@ -5,6 +5,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { isAdminEmail } from "@/lib/admin";
 import { getUsdToAudRate, formatAud } from "@/lib/currency";
 import { getRevenueByCustomer } from "@/lib/stripe/revenue";
+import { getTwilioBalance } from "@/lib/twilio/client";
 import { SignOutButton } from "@/app/components/SignOutButton";
 import { Logo, PageGlow, StatCard, StatusPill } from "@/app/components/ui";
 import type { Business, Call } from "@/lib/types";
@@ -31,15 +32,20 @@ export default async function AdminPage() {
   // Bypasses RLS on purpose — this is the one page that legitimately needs
   // to see every tenant's data, gated above by isAdminEmail.
   const admin = getSupabaseServerClient();
-  const [{ data: businesses }, { data: calls }, rate, revenueByCustomer] = await Promise.all([
-    admin.from("businesses").select("*").order("created_at", { ascending: false }),
-    admin.from("calls").select("business_id, cost, created_at"),
-    getUsdToAudRate(),
-    getRevenueByCustomer().catch((err) => {
-      console.error("Failed to fetch Stripe revenue:", err);
-      return {} as Record<string, number>;
-    }),
-  ]);
+  const [{ data: businesses }, { data: calls }, rate, revenueByCustomer, twilioBalance] =
+    await Promise.all([
+      admin.from("businesses").select("*").order("created_at", { ascending: false }),
+      admin.from("calls").select("business_id, cost, created_at"),
+      getUsdToAudRate(),
+      getRevenueByCustomer().catch((err) => {
+        console.error("Failed to fetch Stripe revenue:", err);
+        return {} as Record<string, number>;
+      }),
+      getTwilioBalance().catch((err) => {
+        console.error("Failed to fetch Twilio balance:", err);
+        return null;
+      }),
+    ]);
 
   const allBusinesses = (businesses ?? []) as Business[];
   const allCalls = (calls ?? []) as Pick<Call, "business_id" | "cost" | "created_at">[];
@@ -87,6 +93,46 @@ export default async function AdminPage() {
           <StatCard label="Total AI cost" value={formatAud(totalCostUsd, rate)} />
           <StatCard label="Total revenue" value={`A$${totalRevenueAud.toFixed(2)}`} />
           <StatCard label="Margin" value={`A$${(totalRevenueAud - totalCostAud).toFixed(2)}`} />
+        </div>
+
+        <div
+          className="mb-8 sm:mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 animate-fade-in-up"
+          style={{ animationDelay: "40ms" }}
+        >
+          <div className="rounded-3xl border border-violet-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_40px_-20px_rgba(139,92,246,0.2)]">
+            <p className="text-sm font-medium text-neutral-500">Twilio balance</p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900">
+              {twilioBalance ? formatAud(twilioBalance.balance, rate) : "—"}
+            </p>
+            {twilioBalance && (
+              <p className="mt-0.5 text-xs text-neutral-400">
+                {twilioBalance.currency} {twilioBalance.balance.toFixed(2)} on Twilio&apos;s books
+              </p>
+            )}
+            <a
+              href="https://console.twilio.com/us1/billing/manage-billing/billing-overview"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-block text-sm text-violet-600 hover:underline"
+            >
+              Recharge on Twilio →
+            </a>
+          </div>
+          <div className="rounded-3xl border border-violet-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_40px_-20px_rgba(139,92,246,0.2)]">
+            <p className="text-sm font-medium text-neutral-500">Vapi balance</p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900">—</p>
+            <p className="mt-0.5 text-xs text-neutral-400">
+              Vapi has no API for this — check it on their dashboard
+            </p>
+            <a
+              href="https://dashboard.vapi.ai/org/billing"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-block text-sm text-violet-600 hover:underline"
+            >
+              Recharge on Vapi →
+            </a>
+          </div>
         </div>
 
         <div

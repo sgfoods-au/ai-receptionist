@@ -9,6 +9,13 @@ export function getTwilioClient() {
   return twilio(accountSid, authToken);
 }
 
+/** Current Twilio account balance — Twilio always reports this in USD. */
+export async function getTwilioBalance(): Promise<{ balance: number; currency: string }> {
+  const client = getTwilioClient();
+  const result = await client.balance.fetch();
+  return { balance: Number(result.balance), currency: result.currency };
+}
+
 /**
  * Buys an Australian Twilio number. No voice webhook is configured here —
  * once imported into Vapi (lib/vapi/client.ts importTwilioNumber), Vapi
