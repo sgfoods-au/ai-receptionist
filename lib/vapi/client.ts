@@ -134,6 +134,53 @@ function bookReservationTools(business: Business, webhookUrl: string, webhookSec
 }
 
 /**
+ * Lets a verified caller (PIN-gated — see the ownerUpdateSection prompt
+ * instructions) update a small, deliberately narrow set of fields —
+ * business hours, pricing info, one FAQ — over the phone instead of the
+ * web dashboard. Omitted entirely when no update_pin is set, so this
+ * capability doesn't exist for a business until the owner opts in from
+ * the dashboard. PIN verification itself happens server-side in the tool
+ * webhook, not here — this only decides whether to offer the tool at all.
+ */
+function updateBusinessInfoTools(business: Business, webhookUrl: string, webhookSecret: string) {
+  if (!business.update_pin) return [];
+  const toolsWebhookUrl = webhookUrl.replace(
+    /\/api\/vapi\/webhook$/,
+    "/api/vapi/tools/update-business-info"
+  );
+
+  return [
+    {
+      type: "function",
+      function: {
+        name: "update_business_info",
+        description:
+          "Verifies the caller's update PIN and, if correct, updates one piece of the business's information (hours, pricing info, or a single FAQ). Only call this after the caller has given a PIN and you've confirmed the exact new wording with them.",
+        parameters: {
+          type: "object",
+          properties: {
+            pin: { type: "string", description: "The update PIN the caller provided." },
+            field: {
+              type: "string",
+              enum: ["business_hours", "pricing_info", "faq"],
+              description: "Which piece of information to update.",
+            },
+            value: {
+              type: "string",
+              description: "The new value, when field is business_hours or pricing_info.",
+            },
+            faqQuestion: { type: "string", description: "Required when field is faq." },
+            faqAnswer: { type: "string", description: "Required when field is faq." },
+          },
+          required: ["pin", "field"],
+        },
+      },
+      server: { url: toolsWebhookUrl, secret: webhookSecret },
+    },
+  ];
+}
+
+/**
  * Fields common to both create and update: the parts driven by business
  * onboarding data, including voice/language — the onboarding UI's voice
  * and language pickers are the source of truth, so these sync on every
@@ -158,6 +205,7 @@ function businessDrivenFields(business: Business, webhookUrl: string, webhookSec
         ...transferTools(business),
         ...bookAppointmentTools(business, webhookUrl, webhookSecret),
         ...bookReservationTools(business, webhookUrl, webhookSecret),
+        ...updateBusinessInfoTools(business, webhookUrl, webhookSecret),
       ],
     },
     voice: {

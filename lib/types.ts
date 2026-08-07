@@ -53,6 +53,7 @@ export interface Business {
   google_calendar_connected: boolean;
   google_refresh_token: string | null;
   google_calendar_email: string | null;
+  update_pin: string | null;
   created_at: string;
   updated_at: string;
 }

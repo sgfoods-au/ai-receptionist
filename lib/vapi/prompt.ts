@@ -23,6 +23,10 @@ export function buildSystemPrompt(business: Business): string {
       ? "\nYou can book real table reservations directly. When a caller wants to reserve a table, agree on a specific date, time, and party size, then call the book_reservation tool to actually create it — don't just say you'll pass along a request. If the tool reports no tables are available at that time, ask the caller for another time and try again.\n"
       : "";
 
+  const ownerUpdateSection = business.update_pin
+    ? "\nIf a caller says they are the business owner and wants to update the business's information, first ask for their update PIN — do not proceed without it, do not guess it, and never say whether a wrong PIN was 'close'. Once they give a PIN, call the update_business_info tool with it and the change they want; it will tell you if the PIN was correct. You may only update business hours, pricing info, or add/update one FAQ this way — for anything else (like changing services offered or the business name), tell them to use their Oviflow dashboard instead. Confirm the exact new wording back to the caller before calling the tool.\n"
+    : "";
+
   const mortgageBrokerData =
     business.industry === "mortgage_broker"
       ? (business.industry_data as MortgageBrokerData | null)
@@ -71,5 +75,5 @@ ${
 If the caller asks for something outside what's listed above (e.g. a specific
 quote, scheduling a specific time slot), say that the owner will confirm
 details on callback rather than guessing.
-${transferSection}${bookingSection}${reservationSection}`;
+${transferSection}${bookingSection}${reservationSection}${ownerUpdateSection}`;
 }

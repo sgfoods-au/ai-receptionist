@@ -5,6 +5,7 @@ import { CallRoutingCard } from "@/app/dashboard/components/CallRoutingCard";
 import { BillingCard } from "@/app/dashboard/components/BillingCard";
 import { AppointmentsCard } from "@/app/dashboard/components/AppointmentsCard";
 import { ReservationsCard } from "@/app/dashboard/components/ReservationsCard";
+import { PhoneUpdatesCard } from "@/app/dashboard/components/PhoneUpdatesCard";
 import { Logo } from "@/app/components/ui";
 import type { Business, Reservation } from "@/lib/types";
 
@@ -118,6 +119,9 @@ export default async function DashboardPage() {
               </div>
               <div style={{ animationDelay: "180ms" }} className="animate-fade-in-up">
                 <CallRoutingCard business={biz} />
+              </div>
+              <div style={{ animationDelay: "220ms" }} className="animate-fade-in-up">
+                <PhoneUpdatesCard business={biz} />
               </div>
             </div>
 
