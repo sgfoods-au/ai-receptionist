@@ -10,14 +10,30 @@ import type { Business, RestaurantData } from "@/lib/types";
  * formatting a phone conversation can't.
  */
 export function buildChatSystemPrompt(business: Business): string {
-  const { drivingSchoolData, carServiceData, restaurantData: restaurantCtx } = getIndustryContext(business);
+  const {
+    drivingSchoolData,
+    carServiceData,
+    restaurantData: restaurantCtx,
+    salonData,
+    tradesData,
+    professionalServicesData,
+    healthClinicData,
+  } = getIndustryContext(business);
 
   const bookingSection = business.google_calendar_connected
     ? drivingSchoolData
       ? `\nYou can book real driving lessons directly. When the visitor wants to book a lesson, agree on a specific date and time, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Lessons are typically ${drivingSchoolData.lesson_duration_minutes} minutes unless they ask for something different. If the tool reports the slot is taken, ask for another time and try again.\n`
       : carServiceData
         ? `\nYou can book real vehicle drop-off/service appointments directly. When the visitor wants to book their car in, agree on a specific date and time and what work is needed, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Services typically take about ${carServiceData.typical_service_duration_minutes} minutes unless they ask for something different. If the tool reports the slot is taken, ask for another time and try again.\n`
-        : "\nYou can book real appointments directly. When the visitor wants to schedule something, agree on a specific date, time, and what it's for, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. If the tool reports the slot is taken, ask for another time and try again.\n"
+        : salonData
+          ? `\nYou can book real appointments directly. When the visitor wants to book in, agree on a specific date, time, and service, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Appointments are typically ${salonData.appointment_duration_minutes} minutes unless they ask for something different. If the tool reports the slot is taken, ask for another time and try again.\n`
+          : tradesData
+            ? `\nYou can book real jobs directly. When the visitor wants to book a job in, agree on a specific date, time, and what the job involves, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Jobs typically take about ${tradesData.typical_job_duration_minutes} minutes unless they say otherwise. If the tool reports the slot is taken, ask for another time and try again.\n`
+            : professionalServicesData
+              ? `\nYou can book real consultations directly. When the visitor wants to book a meeting, agree on a specific date and time, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Meetings are typically ${professionalServicesData.typical_meeting_duration_minutes} minutes unless they ask for something different. If the tool reports the slot is taken, ask for another time and try again.\n`
+              : healthClinicData
+                ? `\nYou can book real appointments directly. When the visitor wants to book in, agree on a specific date, time, and appointment type, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Appointments are typically ${healthClinicData.typical_appointment_duration_minutes} minutes unless they ask for something different. If the tool reports the slot is taken, ask for another time and try again.\n`
+                : "\nYou can book real appointments directly. When the visitor wants to schedule something, agree on a specific date, time, and what it's for, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. If the tool reports the slot is taken, ask for another time and try again.\n"
     : "";
 
   const reservationSection =

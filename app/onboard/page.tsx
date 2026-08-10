@@ -20,16 +20,25 @@ import type {
   CarServiceData,
   DrivingSchoolData,
   Faq,
+  HealthClinicData,
   Industry,
   MortgageBrokerData,
+  ProfessionalServicesData,
   RestaurantData,
+  SalonData,
+  TradesData,
 } from "@/lib/types";
 import {
   CAR_SERVICE_TYPES,
   DIETARY_OPTIONS,
+  HEALTH_APPOINTMENT_TYPES,
+  HEALTH_PRACTITIONER_TYPES,
   LESSON_TYPES,
   LICENSE_CLASSES,
   LOAN_TYPES,
+  PROFESSIONAL_SERVICE_TYPES,
+  SALON_SERVICE_TYPES,
+  TRADE_TYPES,
   VEHICLE_TYPES,
 } from "@/lib/industryOptions";
 
@@ -52,6 +61,10 @@ interface FormState {
   restaurant: RestaurantData;
   drivingSchool: DrivingSchoolData;
   carService: CarServiceData;
+  salon: SalonData;
+  trades: TradesData;
+  professionalServices: ProfessionalServicesData;
+  healthClinic: HealthClinicData;
 }
 
 const EMPTY_FORM: FormState = {
@@ -103,6 +116,33 @@ const EMPTY_FORM: FormState = {
     pickup_dropoff_offered: false,
     typical_service_duration_minutes: 60,
   },
+  salon: {
+    services_offered: [],
+    staff_names: "",
+    appointment_duration_minutes: 45,
+    walk_ins_accepted: false,
+    cancellation_policy: "",
+  },
+  trades: {
+    trade_types: [],
+    callout_fee: "",
+    free_quotes: true,
+    emergency_availability: false,
+    typical_job_duration_minutes: 60,
+  },
+  professionalServices: {
+    services_offered: [],
+    consultation_fee: "",
+    free_initial_consultation: false,
+    typical_meeting_duration_minutes: 30,
+  },
+  healthClinic: {
+    practitioner_types: [],
+    appointment_types: [],
+    medicare_bulk_billing: false,
+    private_health_fund_accepted: true,
+    typical_appointment_duration_minutes: 30,
+  },
 };
 
 type StepId =
@@ -114,6 +154,10 @@ type StepId =
   | "restaurant"
   | "driving_school"
   | "car_service"
+  | "salon"
+  | "trades"
+  | "professional_services"
+  | "health_clinic"
   | "languages"
   | "voice"
   | "review";
@@ -127,6 +171,10 @@ const STEP_TITLES: Record<StepId, string> = {
   restaurant: "Restaurant profile",
   driving_school: "Driving school profile",
   car_service: "Mechanic / service profile",
+  salon: "Salon & beauty profile",
+  trades: "Trades & home services profile",
+  professional_services: "Professional services profile",
+  health_clinic: "Clinic profile",
   languages: "Languages",
   voice: "Choose a voice",
   review: "Review & activate",
@@ -205,6 +253,10 @@ function OnboardForm() {
     if (form.industry === "restaurant") base.push("restaurant");
     if (form.industry === "driving_school") base.push("driving_school");
     if (form.industry === "car_service") base.push("car_service");
+    if (form.industry === "salon") base.push("salon");
+    if (form.industry === "trades") base.push("trades");
+    if (form.industry === "professional_services") base.push("professional_services");
+    if (form.industry === "health_clinic") base.push("health_clinic");
     base.push("languages", "voice", "review");
     return base;
   }, [form.industry]);
@@ -342,6 +394,88 @@ function OnboardForm() {
     }));
   }
 
+  function toggleSalonService(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      salon: {
+        ...prev.salon,
+        services_offered: prev.salon.services_offered.includes(value)
+          ? prev.salon.services_offered.filter((v) => v !== value)
+          : [...prev.salon.services_offered, value],
+      },
+    }));
+  }
+
+  function updateSalon<K extends keyof SalonData>(key: K, value: SalonData[K]) {
+    setForm((prev) => ({ ...prev, salon: { ...prev.salon, [key]: value } }));
+  }
+
+  function toggleTradeType(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      trades: {
+        ...prev.trades,
+        trade_types: prev.trades.trade_types.includes(value)
+          ? prev.trades.trade_types.filter((v) => v !== value)
+          : [...prev.trades.trade_types, value],
+      },
+    }));
+  }
+
+  function updateTrades<K extends keyof TradesData>(key: K, value: TradesData[K]) {
+    setForm((prev) => ({ ...prev, trades: { ...prev.trades, [key]: value } }));
+  }
+
+  function toggleProfessionalService(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      professionalServices: {
+        ...prev.professionalServices,
+        services_offered: prev.professionalServices.services_offered.includes(value)
+          ? prev.professionalServices.services_offered.filter((v) => v !== value)
+          : [...prev.professionalServices.services_offered, value],
+      },
+    }));
+  }
+
+  function updateProfessionalServices<K extends keyof ProfessionalServicesData>(
+    key: K,
+    value: ProfessionalServicesData[K]
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      professionalServices: { ...prev.professionalServices, [key]: value },
+    }));
+  }
+
+  function toggleHealthPractitionerType(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      healthClinic: {
+        ...prev.healthClinic,
+        practitioner_types: prev.healthClinic.practitioner_types.includes(value)
+          ? prev.healthClinic.practitioner_types.filter((v) => v !== value)
+          : [...prev.healthClinic.practitioner_types, value],
+      },
+    }));
+  }
+
+  function toggleHealthAppointmentType(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      healthClinic: {
+        ...prev.healthClinic,
+        appointment_types: prev.healthClinic.appointment_types.includes(value)
+          ? prev.healthClinic.appointment_types.filter((v) => v !== value)
+          : [...prev.healthClinic.appointment_types, value],
+      },
+    }));
+  }
+
+  function updateHealthClinic<K extends keyof HealthClinicData>(key: K, value: HealthClinicData[K]) {
+    setForm((prev) => ({ ...prev, healthClinic: { ...prev.healthClinic, [key]: value } }));
+  }
+
   async function handleMenuPhotoUpload(files: FileList | null) {
     if (!files || !files.length) return;
     setMenuUploading(true);
@@ -462,7 +596,17 @@ function OnboardForm() {
     setSubmitting(true);
     setResult(null);
     try {
-      const { mortgageBroker, restaurant, drivingSchool, carService, ...rest } = form;
+      const {
+        mortgageBroker,
+        restaurant,
+        drivingSchool,
+        carService,
+        salon,
+        trades,
+        professionalServices,
+        healthClinic,
+        ...rest
+      } = form;
       const industryData =
         form.industry === "mortgage_broker"
           ? mortgageBroker
@@ -472,7 +616,15 @@ function OnboardForm() {
               ? drivingSchool
               : form.industry === "car_service"
                 ? carService
-                : undefined;
+                : form.industry === "salon"
+                  ? salon
+                  : form.industry === "trades"
+                    ? trades
+                    : form.industry === "professional_services"
+                      ? professionalServices
+                      : form.industry === "health_clinic"
+                        ? healthClinic
+                        : undefined;
       const res = await fetch("/api/onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -530,10 +682,28 @@ function OnboardForm() {
               {currentStep === "type" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <SelectCard
-                    label="Other business"
-                    description="Trades, retail, hospitality, and everything else"
-                    selected={form.industry === "other"}
-                    onClick={() => update("industry", "other")}
+                    label="Salon & beauty"
+                    description="Services menu, staff, and appointment booking built in"
+                    selected={form.industry === "salon"}
+                    onClick={() => update("industry", "salon")}
+                  />
+                  <SelectCard
+                    label="Trades & home services"
+                    description="Callout fees, quotes, and emergency availability built in"
+                    selected={form.industry === "trades"}
+                    onClick={() => update("industry", "trades")}
+                  />
+                  <SelectCard
+                    label="Professional services"
+                    description="Consultation booking and fee structure built in"
+                    selected={form.industry === "professional_services"}
+                    onClick={() => update("industry", "professional_services")}
+                  />
+                  <SelectCard
+                    label="Health & wellness clinic"
+                    description="Practitioners, health fund info, and booking built in"
+                    selected={form.industry === "health_clinic"}
+                    onClick={() => update("industry", "health_clinic")}
                   />
                   <SelectCard
                     label="Mortgage broker"
@@ -558,6 +728,12 @@ function OnboardForm() {
                     description="Service types, loan cars, and calendar booking built in"
                     selected={form.industry === "car_service"}
                     onClick={() => update("industry", "car_service")}
+                  />
+                  <SelectCard
+                    label="Something else"
+                    description="Retail, hospitality, and everything else not listed above"
+                    selected={form.industry === "other"}
+                    onClick={() => update("industry", "other")}
                   />
                 </div>
               )}
@@ -1008,6 +1184,251 @@ function OnboardForm() {
                 </div>
               )}
 
+              {currentStep === "salon" && (
+                <div className="space-y-5">
+                  <Field label="Services offered">
+                    <div className="flex flex-wrap gap-2">
+                      {SALON_SERVICE_TYPES.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={form.salon.services_offered.includes(option.value)}
+                          onClick={() => toggleSalonService(option.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Staff">
+                    <textarea
+                      rows={2}
+                      placeholder="e.g. Maya (color specialist), Jordan (nails)"
+                      value={form.salon.staff_names}
+                      onChange={(e) => updateSalon("staff_names", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Standard appointment length (minutes)">
+                    <input
+                      type="number"
+                      min={15}
+                      step={15}
+                      value={form.salon.appointment_duration_minutes}
+                      onChange={(e) =>
+                        updateSalon("appointment_duration_minutes", Number(e.target.value) || 45)
+                      }
+                      className={inputClass}
+                    />
+                    <p className="mt-1.5 text-xs text-neutral-400">
+                      Set this to let your AI receptionist book real appointments directly on your
+                      calendar during calls.
+                    </p>
+                  </Field>
+                  <Field label="Cancellation policy (optional)">
+                    <input
+                      placeholder="e.g. 24 hours notice or a fee applies"
+                      value={form.salon.cancellation_policy}
+                      onChange={(e) => updateSalon("cancellation_policy", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.salon.walk_ins_accepted}
+                      onChange={(e) => updateSalon("walk_ins_accepted", e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-sm text-neutral-700">We accept walk-ins</span>
+                  </label>
+                </div>
+              )}
+
+              {currentStep === "trades" && (
+                <div className="space-y-5">
+                  <Field label="Trades offered">
+                    <div className="flex flex-wrap gap-2">
+                      {TRADE_TYPES.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={form.trades.trade_types.includes(option.value)}
+                          onClick={() => toggleTradeType(option.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Callout fee (optional)">
+                    <input
+                      placeholder="e.g. $80, waived if you go ahead with the job"
+                      value={form.trades.callout_fee}
+                      onChange={(e) => updateTrades("callout_fee", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Typical job duration (minutes)">
+                    <input
+                      type="number"
+                      min={15}
+                      step={15}
+                      value={form.trades.typical_job_duration_minutes}
+                      onChange={(e) =>
+                        updateTrades("typical_job_duration_minutes", Number(e.target.value) || 60)
+                      }
+                      className={inputClass}
+                    />
+                    <p className="mt-1.5 text-xs text-neutral-400">
+                      Set this to let your AI receptionist book real jobs directly on your
+                      calendar during calls.
+                    </p>
+                  </Field>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.trades.free_quotes}
+                      onChange={(e) => updateTrades("free_quotes", e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-sm text-neutral-700">We offer free quotes</span>
+                  </label>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.trades.emergency_availability}
+                      onChange={(e) => updateTrades("emergency_availability", e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-sm text-neutral-700">
+                      We&apos;re available for emergency callouts
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              {currentStep === "professional_services" && (
+                <div className="space-y-5">
+                  <Field label="Services offered">
+                    <div className="flex flex-wrap gap-2">
+                      {PROFESSIONAL_SERVICE_TYPES.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={form.professionalServices.services_offered.includes(option.value)}
+                          onClick={() => toggleProfessionalService(option.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Consultation fee (optional)">
+                    <input
+                      placeholder="e.g. $220/hour, or POA depending on scope"
+                      value={form.professionalServices.consultation_fee}
+                      onChange={(e) => updateProfessionalServices("consultation_fee", e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Typical meeting duration (minutes)">
+                    <input
+                      type="number"
+                      min={15}
+                      step={15}
+                      value={form.professionalServices.typical_meeting_duration_minutes}
+                      onChange={(e) =>
+                        updateProfessionalServices(
+                          "typical_meeting_duration_minutes",
+                          Number(e.target.value) || 30
+                        )
+                      }
+                      className={inputClass}
+                    />
+                    <p className="mt-1.5 text-xs text-neutral-400">
+                      Set this to let your AI receptionist book real meetings directly on your
+                      calendar during calls.
+                    </p>
+                  </Field>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.professionalServices.free_initial_consultation}
+                      onChange={(e) =>
+                        updateProfessionalServices("free_initial_consultation", e.target.checked)
+                      }
+                      className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-sm text-neutral-700">
+                      First consultation is free
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              {currentStep === "health_clinic" && (
+                <div className="space-y-5">
+                  <Field label="Practitioners">
+                    <div className="flex flex-wrap gap-2">
+                      {HEALTH_PRACTITIONER_TYPES.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={form.healthClinic.practitioner_types.includes(option.value)}
+                          onClick={() => toggleHealthPractitionerType(option.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Appointment types">
+                    <div className="flex flex-wrap gap-2">
+                      {HEALTH_APPOINTMENT_TYPES.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={form.healthClinic.appointment_types.includes(option.value)}
+                          onClick={() => toggleHealthAppointmentType(option.value)}
+                        />
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Typical appointment duration (minutes)">
+                    <input
+                      type="number"
+                      min={15}
+                      step={15}
+                      value={form.healthClinic.typical_appointment_duration_minutes}
+                      onChange={(e) =>
+                        updateHealthClinic(
+                          "typical_appointment_duration_minutes",
+                          Number(e.target.value) || 30
+                        )
+                      }
+                      className={inputClass}
+                    />
+                    <p className="mt-1.5 text-xs text-neutral-400">
+                      Set this to let your AI receptionist book real appointments directly on your
+                      calendar during calls.
+                    </p>
+                  </Field>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.healthClinic.medicare_bulk_billing}
+                      onChange={(e) => updateHealthClinic("medicare_bulk_billing", e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-sm text-neutral-700">We offer Medicare bulk billing</span>
+                  </label>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.healthClinic.private_health_fund_accepted}
+                      onChange={(e) =>
+                        updateHealthClinic("private_health_fund_accepted", e.target.checked)
+                      }
+                      className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-sm text-neutral-700">We accept private health fund rebates</span>
+                  </label>
+                </div>
+              )}
+
               {currentStep === "languages" && (
                 <div className="space-y-2">
                   <p className="text-sm text-neutral-500 mb-4">
@@ -1108,7 +1529,15 @@ function OnboardForm() {
                             ? "Driving school"
                             : form.industry === "car_service"
                               ? "Mechanic / auto service"
-                              : "Other business"
+                              : form.industry === "salon"
+                                ? "Salon & beauty"
+                                : form.industry === "trades"
+                                  ? "Trades & home services"
+                                  : form.industry === "professional_services"
+                                    ? "Professional services"
+                                    : form.industry === "health_clinic"
+                                      ? "Health & wellness clinic"
+                                      : "Something else"
                     }
                   />
                   <ReviewRow label="Hours" value={form.business_hours || "—"} />
@@ -1142,6 +1571,30 @@ function OnboardForm() {
                     <ReviewRow
                       label="Service bookings"
                       value={`${form.carService.typical_service_duration_minutes} min typical — connect Google Calendar from your dashboard to enable live booking`}
+                    />
+                  )}
+                  {form.industry === "salon" && (
+                    <ReviewRow
+                      label="Appointments"
+                      value={`${form.salon.appointment_duration_minutes} min typical — connect Google Calendar from your dashboard to enable live booking`}
+                    />
+                  )}
+                  {form.industry === "trades" && (
+                    <ReviewRow
+                      label="Job bookings"
+                      value={`${form.trades.typical_job_duration_minutes} min typical — connect Google Calendar from your dashboard to enable live booking`}
+                    />
+                  )}
+                  {form.industry === "professional_services" && (
+                    <ReviewRow
+                      label="Meetings"
+                      value={`${form.professionalServices.typical_meeting_duration_minutes} min typical — connect Google Calendar from your dashboard to enable live booking`}
+                    />
+                  )}
+                  {form.industry === "health_clinic" && (
+                    <ReviewRow
+                      label="Appointments"
+                      value={`${form.healthClinic.typical_appointment_duration_minutes} min typical — connect Google Calendar from your dashboard to enable live booking`}
                     />
                   )}
                   <p className="text-sm text-neutral-500 pt-2">

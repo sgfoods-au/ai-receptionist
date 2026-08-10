@@ -31,13 +31,19 @@ export async function POST(request: Request) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const industry =
-      input.industry === "mortgage_broker" ||
-      input.industry === "restaurant" ||
-      input.industry === "driving_school" ||
-      input.industry === "car_service"
-        ? input.industry
-        : "other";
+    const SPECIALIZED_INDUSTRIES: Business["industry"][] = [
+      "mortgage_broker",
+      "restaurant",
+      "driving_school",
+      "car_service",
+      "salon",
+      "trades",
+      "professional_services",
+      "health_clinic",
+    ];
+    const industry = SPECIALIZED_INDUSTRIES.includes(input.industry as Business["industry"])
+      ? (input.industry as Business["industry"])
+      : "other";
 
     const { data: saved, error: saveError } = await supabase
       .from("businesses")
@@ -58,13 +64,7 @@ export async function POST(request: Request) {
           languages: input.languages?.length ? input.languages : ["en"],
           voice_id: input.voice_id || "Elliot",
           industry,
-          industry_data:
-            industry === "mortgage_broker" ||
-            industry === "restaurant" ||
-            industry === "driving_school" ||
-            industry === "car_service"
-              ? (input.industry_data ?? null)
-              : null,
+          industry_data: SPECIALIZED_INDUSTRIES.includes(industry) ? (input.industry_data ?? null) : null,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }

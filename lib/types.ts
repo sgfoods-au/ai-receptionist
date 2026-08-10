@@ -5,6 +5,10 @@ export interface Faq {
 
 export type Industry =
   | "other"
+  | "salon"
+  | "trades"
+  | "professional_services"
+  | "health_clinic"
   | "mortgage_broker"
   | "restaurant"
   | "driving_school"
@@ -15,6 +19,37 @@ export interface MortgageBrokerData {
   lenders: string;
   required_documents: string;
   licensed_regions: string;
+}
+
+export interface SalonData {
+  services_offered: string[];
+  staff_names: string;
+  appointment_duration_minutes: number;
+  walk_ins_accepted: boolean;
+  cancellation_policy: string;
+}
+
+export interface TradesData {
+  trade_types: string[];
+  callout_fee: string;
+  free_quotes: boolean;
+  emergency_availability: boolean;
+  typical_job_duration_minutes: number;
+}
+
+export interface ProfessionalServicesData {
+  services_offered: string[];
+  consultation_fee: string;
+  free_initial_consultation: boolean;
+  typical_meeting_duration_minutes: number;
+}
+
+export interface HealthClinicData {
+  practitioner_types: string[];
+  appointment_types: string[];
+  medicare_bulk_billing: boolean;
+  private_health_fund_accepted: boolean;
+  typical_appointment_duration_minutes: number;
 }
 
 export interface RestaurantData {
@@ -82,7 +117,16 @@ export interface Business {
   languages: string[];
   voice_id: string;
   industry: Industry;
-  industry_data: MortgageBrokerData | RestaurantData | DrivingSchoolData | CarServiceData | null;
+  industry_data:
+    | MortgageBrokerData
+    | RestaurantData
+    | DrivingSchoolData
+    | CarServiceData
+    | SalonData
+    | TradesData
+    | ProfessionalServicesData
+    | HealthClinicData
+    | null;
   system_prompt: string | null;
   vapi_assistant_id: string | null;
   vapi_phone_number_id: string | null;
@@ -198,7 +242,15 @@ export interface BusinessOnboardingInput {
   languages?: string[];
   voice_id?: string;
   industry?: Industry;
-  industry_data?: MortgageBrokerData | RestaurantData | DrivingSchoolData | CarServiceData;
+  industry_data?:
+    | MortgageBrokerData
+    | RestaurantData
+    | DrivingSchoolData
+    | CarServiceData
+    | SalonData
+    | TradesData
+    | ProfessionalServicesData
+    | HealthClinicData;
 }
 
 export interface ScrapedBusinessInfo {

@@ -2,8 +2,12 @@ import type {
   Business,
   CarServiceData,
   DrivingSchoolData,
+  HealthClinicData,
   MortgageBrokerData,
+  ProfessionalServicesData,
   RestaurantData,
+  SalonData,
+  TradesData,
 } from "@/lib/types";
 
 export interface IndustryContext {
@@ -11,6 +15,10 @@ export interface IndustryContext {
   restaurantData: RestaurantData | null;
   drivingSchoolData: DrivingSchoolData | null;
   carServiceData: CarServiceData | null;
+  salonData: SalonData | null;
+  tradesData: TradesData | null;
+  professionalServicesData: ProfessionalServicesData | null;
+  healthClinicData: HealthClinicData | null;
 }
 
 /** Casts business.industry_data to the right shape for the business's industry, once. */
@@ -24,11 +32,28 @@ export function getIndustryContext(business: Business): IndustryContext {
       business.industry === "driving_school" ? (business.industry_data as DrivingSchoolData | null) : null,
     carServiceData:
       business.industry === "car_service" ? (business.industry_data as CarServiceData | null) : null,
+    salonData: business.industry === "salon" ? (business.industry_data as SalonData | null) : null,
+    tradesData: business.industry === "trades" ? (business.industry_data as TradesData | null) : null,
+    professionalServicesData:
+      business.industry === "professional_services"
+        ? (business.industry_data as ProfessionalServicesData | null)
+        : null,
+    healthClinicData:
+      business.industry === "health_clinic" ? (business.industry_data as HealthClinicData | null) : null,
   };
 }
 
 function buildIndustrySection(ctx: IndustryContext): string {
-  const { mortgageBrokerData, restaurantData, drivingSchoolData, carServiceData } = ctx;
+  const {
+    mortgageBrokerData,
+    restaurantData,
+    drivingSchoolData,
+    carServiceData,
+    salonData,
+    tradesData,
+    professionalServicesData,
+    healthClinicData,
+  } = ctx;
 
   if (mortgageBrokerData) {
     return `\nLoan types offered: ${mortgageBrokerData.loan_types?.length ? mortgageBrokerData.loan_types.join(", ") : "Not specified"}
@@ -63,6 +88,33 @@ Loan car available: ${carServiceData.loan_car_available ? "Yes" : "No"}
 Pickup/drop-off offered: ${carServiceData.pickup_dropoff_offered ? "Yes" : "No"}
 Typical service duration: ${carServiceData.typical_service_duration_minutes} minutes\n`;
   }
+  if (salonData) {
+    return `\nServices offered: ${salonData.services_offered?.length ? salonData.services_offered.join(", ") : "Not specified"}
+Staff: ${salonData.staff_names || "Not specified"}
+Standard appointment length: ${salonData.appointment_duration_minutes} minutes
+Walk-ins accepted: ${salonData.walk_ins_accepted ? "Yes" : "No"}
+Cancellation policy: ${salonData.cancellation_policy || "Not specified"}\n`;
+  }
+  if (tradesData) {
+    return `\nTrades offered: ${tradesData.trade_types?.length ? tradesData.trade_types.join(", ") : "Not specified"}
+Callout fee: ${tradesData.callout_fee || "Not specified"}
+Free quotes: ${tradesData.free_quotes ? "Yes" : "No"}
+Emergency availability: ${tradesData.emergency_availability ? "Yes" : "No"}
+Typical job duration: ${tradesData.typical_job_duration_minutes} minutes\n`;
+  }
+  if (professionalServicesData) {
+    return `\nServices offered: ${professionalServicesData.services_offered?.length ? professionalServicesData.services_offered.join(", ") : "Not specified"}
+Consultation fee: ${professionalServicesData.consultation_fee || "Not specified"}
+Free initial consultation: ${professionalServicesData.free_initial_consultation ? "Yes" : "No"}
+Typical meeting duration: ${professionalServicesData.typical_meeting_duration_minutes} minutes\n`;
+  }
+  if (healthClinicData) {
+    return `\nPractitioners: ${healthClinicData.practitioner_types?.length ? healthClinicData.practitioner_types.join(", ") : "Not specified"}
+Appointment types: ${healthClinicData.appointment_types?.length ? healthClinicData.appointment_types.join(", ") : "Not specified"}
+Medicare bulk billing: ${healthClinicData.medicare_bulk_billing ? "Yes" : "No"}
+Private health fund accepted: ${healthClinicData.private_health_fund_accepted ? "Yes" : "No"}
+Typical appointment duration: ${healthClinicData.typical_appointment_duration_minutes} minutes\n`;
+  }
   return "";
 }
 
@@ -96,14 +148,29 @@ export function buildSystemPrompt(business: Business): string {
     ? "\nIf the caller explicitly insists on speaking to a real person, or asks something clearly outside what you can resolve from the information above, offer to transfer them to the owner now using the transferCall tool, rather than just taking a message.\n"
     : "";
 
-  const { drivingSchoolData, carServiceData } = getIndustryContext(business);
+  const {
+    drivingSchoolData,
+    carServiceData,
+    salonData,
+    tradesData,
+    professionalServicesData,
+    healthClinicData,
+  } = getIndustryContext(business);
 
   const bookingSection = business.google_calendar_connected
     ? drivingSchoolData
       ? `\nYou can book real driving lessons on the business's calendar. When a caller wants to book a lesson, agree on a specific date and time, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Lessons are typically ${drivingSchoolData.lesson_duration_minutes} minutes unless the caller asks for something different. If the tool reports the slot is taken, ask the caller for another time and try again.\n`
       : carServiceData
         ? `\nYou can book real vehicle drop-off/service appointments on the business's calendar. When a caller wants to book their car in, agree on a specific date and time and what work is needed, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Services typically take about ${carServiceData.typical_service_duration_minutes} minutes unless the caller asks for something different. If the tool reports the slot is taken, ask the caller for another time and try again.\n`
-        : "\nYou can book real appointments on the business's calendar. When a caller wants to schedule something, agree on a specific date, time, and what it's for, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. If the tool reports the slot is taken, ask the caller for another time and try again.\n"
+        : salonData
+          ? `\nYou can book real appointments on the business's calendar. When a caller wants to book in, agree on a specific date, time, and service, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Appointments are typically ${salonData.appointment_duration_minutes} minutes unless the caller asks for something different. If the tool reports the slot is taken, ask the caller for another time and try again.\n`
+          : tradesData
+            ? `\nYou can book real jobs on the business's calendar. When a caller wants to book a job in, agree on a specific date, time, and what the job involves, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Jobs typically take about ${tradesData.typical_job_duration_minutes} minutes unless the caller says otherwise. If the tool reports the slot is taken, ask the caller for another time and try again.\n`
+            : professionalServicesData
+              ? `\nYou can book real consultations on the business's calendar. When a caller wants to book a meeting, agree on a specific date and time, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Meetings are typically ${professionalServicesData.typical_meeting_duration_minutes} minutes unless the caller asks for something different. If the tool reports the slot is taken, ask the caller for another time and try again.\n`
+              : healthClinicData
+                ? `\nYou can book real appointments on the business's calendar. When a caller wants to book in, agree on a specific date, time, and appointment type, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. Appointments are typically ${healthClinicData.typical_appointment_duration_minutes} minutes unless the caller asks for something different. If the tool reports the slot is taken, ask the caller for another time and try again.\n`
+                : "\nYou can book real appointments on the business's calendar. When a caller wants to schedule something, agree on a specific date, time, and what it's for, then call the book_appointment tool to actually create it — don't just say you'll pass along a request. If the tool reports the slot is taken, ask the caller for another time and try again.\n"
     : "";
 
   const sendLinkSection =

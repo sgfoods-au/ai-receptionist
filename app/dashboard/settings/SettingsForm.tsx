@@ -6,9 +6,14 @@ import { CARD, Field, INPUT, PRIMARY_BTN, Pill, SECONDARY_BTN, SelectCard } from
 import {
   CAR_SERVICE_TYPES,
   DIETARY_OPTIONS,
+  HEALTH_APPOINTMENT_TYPES,
+  HEALTH_PRACTITIONER_TYPES,
   LESSON_TYPES,
   LICENSE_CLASSES,
   LOAN_TYPES,
+  PROFESSIONAL_SERVICE_TYPES,
+  SALON_SERVICE_TYPES,
+  TRADE_TYPES,
   VEHICLE_TYPES,
 } from "@/lib/industryOptions";
 import { SUPPORTED_LANGUAGES } from "@/lib/vapi/languages";
@@ -18,9 +23,13 @@ import type {
   CarServiceData,
   DrivingSchoolData,
   Faq,
+  HealthClinicData,
   Industry,
   MortgageBrokerData,
+  ProfessionalServicesData,
   RestaurantData,
+  SalonData,
+  TradesData,
 } from "@/lib/types";
 
 const LANGUAGES = SUPPORTED_LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
@@ -61,6 +70,33 @@ const EMPTY_CAR_SERVICE: CarServiceData = {
   pickup_dropoff_offered: false,
   typical_service_duration_minutes: 60,
 };
+const EMPTY_SALON: SalonData = {
+  services_offered: [],
+  staff_names: "",
+  appointment_duration_minutes: 45,
+  walk_ins_accepted: false,
+  cancellation_policy: "",
+};
+const EMPTY_TRADES: TradesData = {
+  trade_types: [],
+  callout_fee: "",
+  free_quotes: true,
+  emergency_availability: false,
+  typical_job_duration_minutes: 60,
+};
+const EMPTY_PROFESSIONAL_SERVICES: ProfessionalServicesData = {
+  services_offered: [],
+  consultation_fee: "",
+  free_initial_consultation: false,
+  typical_meeting_duration_minutes: 30,
+};
+const EMPTY_HEALTH_CLINIC: HealthClinicData = {
+  practitioner_types: [],
+  appointment_types: [],
+  medicare_bulk_billing: false,
+  private_health_fund_accepted: true,
+  typical_appointment_duration_minutes: 30,
+};
 
 interface FormState {
   name: string;
@@ -79,6 +115,10 @@ interface FormState {
   restaurant: RestaurantData;
   drivingSchool: DrivingSchoolData;
   carService: CarServiceData;
+  salon: SalonData;
+  trades: TradesData;
+  professionalServices: ProfessionalServicesData;
+  healthClinic: HealthClinicData;
 }
 
 function formFromBusiness(business: Business): FormState {
@@ -111,6 +151,22 @@ function formFromBusiness(business: Business): FormState {
       business.industry === "car_service"
         ? { ...EMPTY_CAR_SERVICE, ...(business.industry_data as CarServiceData) }
         : EMPTY_CAR_SERVICE,
+    salon:
+      business.industry === "salon"
+        ? { ...EMPTY_SALON, ...(business.industry_data as SalonData) }
+        : EMPTY_SALON,
+    trades:
+      business.industry === "trades"
+        ? { ...EMPTY_TRADES, ...(business.industry_data as TradesData) }
+        : EMPTY_TRADES,
+    professionalServices:
+      business.industry === "professional_services"
+        ? { ...EMPTY_PROFESSIONAL_SERVICES, ...(business.industry_data as ProfessionalServicesData) }
+        : EMPTY_PROFESSIONAL_SERVICES,
+    healthClinic:
+      business.industry === "health_clinic"
+        ? { ...EMPTY_HEALTH_CLINIC, ...(business.industry_data as HealthClinicData) }
+        : EMPTY_HEALTH_CLINIC,
   };
 }
 
@@ -244,6 +300,83 @@ export function SettingsForm({
     setForm((prev) => ({ ...prev, carService: { ...prev.carService, [key]: value } }));
   }
 
+  function toggleSalonService(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      salon: {
+        ...prev.salon,
+        services_offered: prev.salon.services_offered.includes(value)
+          ? prev.salon.services_offered.filter((v) => v !== value)
+          : [...prev.salon.services_offered, value],
+      },
+    }));
+  }
+  function updateSalon<K extends keyof SalonData>(key: K, value: SalonData[K]) {
+    setForm((prev) => ({ ...prev, salon: { ...prev.salon, [key]: value } }));
+  }
+
+  function toggleTradeType(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      trades: {
+        ...prev.trades,
+        trade_types: prev.trades.trade_types.includes(value)
+          ? prev.trades.trade_types.filter((v) => v !== value)
+          : [...prev.trades.trade_types, value],
+      },
+    }));
+  }
+  function updateTrades<K extends keyof TradesData>(key: K, value: TradesData[K]) {
+    setForm((prev) => ({ ...prev, trades: { ...prev.trades, [key]: value } }));
+  }
+
+  function toggleProfessionalService(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      professionalServices: {
+        ...prev.professionalServices,
+        services_offered: prev.professionalServices.services_offered.includes(value)
+          ? prev.professionalServices.services_offered.filter((v) => v !== value)
+          : [...prev.professionalServices.services_offered, value],
+      },
+    }));
+  }
+  function updateProfessionalServices<K extends keyof ProfessionalServicesData>(
+    key: K,
+    value: ProfessionalServicesData[K]
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      professionalServices: { ...prev.professionalServices, [key]: value },
+    }));
+  }
+
+  function toggleHealthPractitionerType(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      healthClinic: {
+        ...prev.healthClinic,
+        practitioner_types: prev.healthClinic.practitioner_types.includes(value)
+          ? prev.healthClinic.practitioner_types.filter((v) => v !== value)
+          : [...prev.healthClinic.practitioner_types, value],
+      },
+    }));
+  }
+  function toggleHealthAppointmentType(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      healthClinic: {
+        ...prev.healthClinic,
+        appointment_types: prev.healthClinic.appointment_types.includes(value)
+          ? prev.healthClinic.appointment_types.filter((v) => v !== value)
+          : [...prev.healthClinic.appointment_types, value],
+      },
+    }));
+  }
+  function updateHealthClinic<K extends keyof HealthClinicData>(key: K, value: HealthClinicData[K]) {
+    setForm((prev) => ({ ...prev, healthClinic: { ...prev.healthClinic, [key]: value } }));
+  }
+
   function updateFaq(index: number, key: keyof Faq, value: string) {
     setForm((prev) => ({
       ...prev,
@@ -290,7 +423,17 @@ export function SettingsForm({
     setSaving(true);
     setResult(null);
     try {
-      const { mortgageBroker, restaurant, drivingSchool, carService, ...rest } = form;
+      const {
+        mortgageBroker,
+        restaurant,
+        drivingSchool,
+        carService,
+        salon,
+        trades,
+        professionalServices,
+        healthClinic,
+        ...rest
+      } = form;
       const industryData =
         form.industry === "mortgage_broker"
           ? mortgageBroker
@@ -300,7 +443,15 @@ export function SettingsForm({
               ? drivingSchool
               : form.industry === "car_service"
                 ? carService
-                : undefined;
+                : form.industry === "salon"
+                  ? salon
+                  : form.industry === "trades"
+                    ? trades
+                    : form.industry === "professional_services"
+                      ? professionalServices
+                      : form.industry === "health_clinic"
+                        ? healthClinic
+                        : undefined;
       const res = await fetch("/api/onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -339,10 +490,28 @@ export function SettingsForm({
       <Section title="Business type">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <SelectCard
-            label="Other business"
-            description="Trades, retail, hospitality, and everything else"
-            selected={form.industry === "other"}
-            onClick={() => update("industry", "other")}
+            label="Salon & beauty"
+            description="Services menu, staff, and appointment booking built in"
+            selected={form.industry === "salon"}
+            onClick={() => update("industry", "salon")}
+          />
+          <SelectCard
+            label="Trades & home services"
+            description="Callout fees, quotes, and emergency availability built in"
+            selected={form.industry === "trades"}
+            onClick={() => update("industry", "trades")}
+          />
+          <SelectCard
+            label="Professional services"
+            description="Consultation booking and fee structure built in"
+            selected={form.industry === "professional_services"}
+            onClick={() => update("industry", "professional_services")}
+          />
+          <SelectCard
+            label="Health & wellness clinic"
+            description="Practitioners, health fund info, and booking built in"
+            selected={form.industry === "health_clinic"}
+            onClick={() => update("industry", "health_clinic")}
           />
           <SelectCard
             label="Mortgage broker"
@@ -367,6 +536,12 @@ export function SettingsForm({
             description="Service types, loan cars, and calendar booking built in"
             selected={form.industry === "car_service"}
             onClick={() => update("industry", "car_service")}
+          />
+          <SelectCard
+            label="Something else"
+            description="Retail, hospitality, and everything else not listed above"
+            selected={form.industry === "other"}
+            onClick={() => update("industry", "other")}
           />
         </div>
       </Section>
@@ -670,6 +845,235 @@ export function SettingsForm({
                 className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
               />
               <span className="text-sm text-neutral-700">We offer vehicle pickup/drop-off</span>
+            </label>
+          </div>
+        </Section>
+      )}
+
+      {form.industry === "salon" && (
+        <Section title="Salon & beauty profile">
+          <div className="space-y-5">
+            <Field label="Services offered">
+              <div className="flex flex-wrap gap-2">
+                {SALON_SERVICE_TYPES.map((opt) => (
+                  <Pill
+                    key={opt.value}
+                    label={opt.label}
+                    selected={form.salon.services_offered.includes(opt.value)}
+                    onClick={() => toggleSalonService(opt.value)}
+                  />
+                ))}
+              </div>
+            </Field>
+            <Field label="Staff">
+              <textarea
+                rows={2}
+                value={form.salon.staff_names}
+                onChange={(e) => updateSalon("staff_names", e.target.value)}
+                className={INPUT}
+              />
+            </Field>
+            <Field label="Standard appointment length (minutes)">
+              <input
+                type="number"
+                min={15}
+                step={15}
+                value={form.salon.appointment_duration_minutes}
+                onChange={(e) =>
+                  updateSalon("appointment_duration_minutes", Number(e.target.value) || 45)
+                }
+                className={INPUT}
+              />
+            </Field>
+            <Field label="Cancellation policy (optional)">
+              <input
+                value={form.salon.cancellation_policy}
+                onChange={(e) => updateSalon("cancellation_policy", e.target.value)}
+                className={INPUT}
+              />
+            </Field>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.salon.walk_ins_accepted}
+                onChange={(e) => updateSalon("walk_ins_accepted", e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+              />
+              <span className="text-sm text-neutral-700">We accept walk-ins</span>
+            </label>
+          </div>
+        </Section>
+      )}
+
+      {form.industry === "trades" && (
+        <Section title="Trades & home services profile">
+          <div className="space-y-5">
+            <Field label="Trades offered">
+              <div className="flex flex-wrap gap-2">
+                {TRADE_TYPES.map((opt) => (
+                  <Pill
+                    key={opt.value}
+                    label={opt.label}
+                    selected={form.trades.trade_types.includes(opt.value)}
+                    onClick={() => toggleTradeType(opt.value)}
+                  />
+                ))}
+              </div>
+            </Field>
+            <Field label="Callout fee (optional)">
+              <input
+                value={form.trades.callout_fee}
+                onChange={(e) => updateTrades("callout_fee", e.target.value)}
+                className={INPUT}
+              />
+            </Field>
+            <Field label="Typical job duration (minutes)">
+              <input
+                type="number"
+                min={15}
+                step={15}
+                value={form.trades.typical_job_duration_minutes}
+                onChange={(e) =>
+                  updateTrades("typical_job_duration_minutes", Number(e.target.value) || 60)
+                }
+                className={INPUT}
+              />
+            </Field>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.trades.free_quotes}
+                onChange={(e) => updateTrades("free_quotes", e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+              />
+              <span className="text-sm text-neutral-700">We offer free quotes</span>
+            </label>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.trades.emergency_availability}
+                onChange={(e) => updateTrades("emergency_availability", e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+              />
+              <span className="text-sm text-neutral-700">We&apos;re available for emergency callouts</span>
+            </label>
+          </div>
+        </Section>
+      )}
+
+      {form.industry === "professional_services" && (
+        <Section title="Professional services profile">
+          <div className="space-y-5">
+            <Field label="Services offered">
+              <div className="flex flex-wrap gap-2">
+                {PROFESSIONAL_SERVICE_TYPES.map((opt) => (
+                  <Pill
+                    key={opt.value}
+                    label={opt.label}
+                    selected={form.professionalServices.services_offered.includes(opt.value)}
+                    onClick={() => toggleProfessionalService(opt.value)}
+                  />
+                ))}
+              </div>
+            </Field>
+            <Field label="Consultation fee (optional)">
+              <input
+                value={form.professionalServices.consultation_fee}
+                onChange={(e) => updateProfessionalServices("consultation_fee", e.target.value)}
+                className={INPUT}
+              />
+            </Field>
+            <Field label="Typical meeting duration (minutes)">
+              <input
+                type="number"
+                min={15}
+                step={15}
+                value={form.professionalServices.typical_meeting_duration_minutes}
+                onChange={(e) =>
+                  updateProfessionalServices(
+                    "typical_meeting_duration_minutes",
+                    Number(e.target.value) || 30
+                  )
+                }
+                className={INPUT}
+              />
+            </Field>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.professionalServices.free_initial_consultation}
+                onChange={(e) =>
+                  updateProfessionalServices("free_initial_consultation", e.target.checked)
+                }
+                className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+              />
+              <span className="text-sm text-neutral-700">First consultation is free</span>
+            </label>
+          </div>
+        </Section>
+      )}
+
+      {form.industry === "health_clinic" && (
+        <Section title="Clinic profile">
+          <div className="space-y-5">
+            <Field label="Practitioners">
+              <div className="flex flex-wrap gap-2">
+                {HEALTH_PRACTITIONER_TYPES.map((opt) => (
+                  <Pill
+                    key={opt.value}
+                    label={opt.label}
+                    selected={form.healthClinic.practitioner_types.includes(opt.value)}
+                    onClick={() => toggleHealthPractitionerType(opt.value)}
+                  />
+                ))}
+              </div>
+            </Field>
+            <Field label="Appointment types">
+              <div className="flex flex-wrap gap-2">
+                {HEALTH_APPOINTMENT_TYPES.map((opt) => (
+                  <Pill
+                    key={opt.value}
+                    label={opt.label}
+                    selected={form.healthClinic.appointment_types.includes(opt.value)}
+                    onClick={() => toggleHealthAppointmentType(opt.value)}
+                  />
+                ))}
+              </div>
+            </Field>
+            <Field label="Typical appointment duration (minutes)">
+              <input
+                type="number"
+                min={15}
+                step={15}
+                value={form.healthClinic.typical_appointment_duration_minutes}
+                onChange={(e) =>
+                  updateHealthClinic(
+                    "typical_appointment_duration_minutes",
+                    Number(e.target.value) || 30
+                  )
+                }
+                className={INPUT}
+              />
+            </Field>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.healthClinic.medicare_bulk_billing}
+                onChange={(e) => updateHealthClinic("medicare_bulk_billing", e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+              />
+              <span className="text-sm text-neutral-700">We offer Medicare bulk billing</span>
+            </label>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.healthClinic.private_health_fund_accepted}
+                onChange={(e) =>
+                  updateHealthClinic("private_health_fund_accepted", e.target.checked)
+                }
+                className="h-4 w-4 rounded border-neutral-300 text-violet-600 focus:ring-violet-500"
+              />
+              <span className="text-sm text-neutral-700">We accept private health fund rebates</span>
             </label>
           </div>
         </Section>
