@@ -30,6 +30,7 @@ export function AdminBusinessActions({ business }: { business: Business }) {
   }
 
   function handleExtendTrial() {
+    if (!window.confirm(`Extend ${business.name}'s trial by ${days} day${days === 1 ? "" : "s"}?`)) return;
     run("trial", () =>
       fetch(`/api/admin/businesses/${business.id}/extend-trial`, {
         method: "POST",
@@ -40,6 +41,12 @@ export function AdminBusinessActions({ business }: { business: Business }) {
   }
 
   function handleDiscount() {
+    if (
+      !window.confirm(
+        `Apply a ${percentOff}% off (forever) discount to ${business.name}'s subscription? This reduces what they're billed starting now.`
+      )
+    )
+      return;
     run("discount", () =>
       fetch(`/api/admin/businesses/${business.id}/discount`, {
         method: "POST",
@@ -50,6 +57,7 @@ export function AdminBusinessActions({ business }: { business: Business }) {
   }
 
   function handleRemoveDiscount() {
+    if (!window.confirm(`Remove any active discount from ${business.name}'s subscription?`)) return;
     run("remove-discount", () =>
       fetch(`/api/admin/businesses/${business.id}/discount`, { method: "DELETE" })
     );
@@ -57,6 +65,10 @@ export function AdminBusinessActions({ business }: { business: Business }) {
 
   async function handleToggleChatComp() {
     const next = !chatComped;
+    const confirmMessage = next
+      ? `Grant ${business.name} free chat widget access, regardless of their plan?`
+      : `Remove ${business.name}'s comped chat widget access?`;
+    if (!window.confirm(confirmMessage)) return;
     await run("chat", () =>
       fetch(`/api/admin/businesses/${business.id}/overrides`, {
         method: "PATCH",
