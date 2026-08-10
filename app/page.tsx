@@ -1,14 +1,26 @@
 import Link from "next/link";
-import { Mascot } from "@/app/onboard/components/Mascot";
-import { AnimatedLines, Logo, PageGlow } from "@/app/components/ui";
+import { Logo, PageGlow } from "@/app/components/ui";
 import { PLANS, OVERAGE_RATE_AUD_PER_MIN } from "@/lib/stripe/plans";
 
-const FEATURES = [
+const SPOTLIGHT_FEATURES = [
   {
     title: "Answers every call, 24/7",
     description: "Never a missed call, day or night.",
     icon: "phone",
   },
+  {
+    title: "Books real appointments",
+    description: "Checks your calendar and confirms the slot on the call — reservations too.",
+    icon: "calendar",
+  },
+  {
+    title: "Website chat widget",
+    description: "The same AI and tools, embedded on your site. Included with Pro.",
+    icon: "chat",
+  },
+];
+
+const MORE_FEATURES = [
   {
     title: "Rings you first",
     description: "Your own phone rings first — AI backs you up if you can't get to it.",
@@ -23,16 +35,6 @@ const FEATURES = [
     title: "Live transfer to you",
     description: "Bridges tricky callers to a real person, with context, mid-call.",
     icon: "transfer",
-  },
-  {
-    title: "Books real appointments",
-    description: "Checks your Google Calendar and books the slot on the call.",
-    icon: "calendar",
-  },
-  {
-    title: "Table reservations",
-    description: "Restaurants can take real bookings, checked against seating.",
-    icon: "table",
   },
   {
     title: "Menu-aware & delivery",
@@ -58,11 +60,6 @@ const FEATURES = [
     title: "Recordings & transcripts",
     description: "Every call recorded, transcribed, and summarised in your inbox.",
     icon: "document",
-  },
-  {
-    title: "Website chat widget",
-    description: "Embed the same AI and tools on your site — included with the Pro plan.",
-    icon: "chat",
   },
   {
     title: "Update by phone",
@@ -162,18 +159,17 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
       <PageGlow />
-      <AnimatedLines />
 
       <div className="relative">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-7">
           <Logo />
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <Link href="/login" className="text-sm text-neutral-500 hover:text-violet-600 transition-colors">
               Log in
             </Link>
             <Link
               href="/signup"
-              className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/35 hover:-translate-y-0.5 transition-all"
+              className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2 text-sm font-medium text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/35 hover:-translate-y-0.5 transition-all"
             >
               Get started free
             </Link>
@@ -182,58 +178,83 @@ export default function Home() {
 
         <main className="mx-auto max-w-6xl px-6">
           {/* Hero */}
-          <section className="flex flex-col-reverse items-center gap-10 py-16 md:flex-row md:justify-between md:py-24">
-            <div className="max-w-xl text-center md:text-left animate-fade-in-up">
-              <span className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-violet-700">
-                🇦🇺 Made in Australia, for Australian businesses
+          <section className="grid gap-16 py-16 md:grid-cols-[1.08fr_0.92fr] md:items-center md:py-24">
+            <div className="animate-fade-in-up">
+              <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">
+                🇦🇺 Made in Australia
               </span>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight md:text-5xl">
-                Never miss a customer call again
+              <h1 className="mt-6 font-serif text-5xl font-medium leading-[1.05] tracking-tight text-neutral-900 md:text-6xl lg:text-[4.5rem]">
+                Never miss a call
+                <br />
+                <span className="italic text-violet-600">worth answering.</span>
               </h1>
-              <p className="mt-5 text-lg text-neutral-500">
+              <p className="mt-7 max-w-lg text-lg leading-relaxed text-neutral-500">
                 Oviflow answers your phone with an AI receptionist that understands your
-                business, talks to your customers, and emails you the details — after hours,
-                mid-job, or whenever you can&apos;t pick up.
+                business, talks to customers like a real person would, and sends you the
+                details — after hours, mid-job, or whenever you can&apos;t pick up.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
+              <div className="mt-9 flex flex-wrap items-center gap-5">
                 <Link
                   href="/signup"
-                  className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all"
+                  className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-7 py-3.5 text-sm font-medium text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all"
                 >
                   Get started free
                 </Link>
                 <Link
                   href="/login"
-                  className="rounded-xl border border-neutral-200 px-6 py-3 text-sm font-medium text-neutral-700 hover:border-violet-200 hover:bg-violet-50 transition-colors"
+                  className="text-sm font-medium text-neutral-600 hover:text-violet-600 transition-colors"
                 >
-                  Log in
+                  Log in →
                 </Link>
               </div>
-              <p className="mt-4 text-xs text-neutral-400">
+              <p className="mt-7 text-xs uppercase tracking-wide text-neutral-400">
                 No card required · 14-day free trial · Cancel anytime
               </p>
             </div>
-            <div className="shrink-0 scale-[2.2] md:scale-[3] animate-soft-float">
-              <Mascot mood="happy" />
+
+            <div className="animate-fade-in-up" style={{ animationDelay: "140ms" }}>
+              <CallMockup />
             </div>
           </section>
 
           {/* Features */}
-          <section className="py-16 md:py-20">
-            <h2 className="text-center text-2xl font-semibold tracking-tight md:text-3xl">
-              Everything you need, none of the busywork
-            </h2>
-            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((feature, i) => (
-                <FeatureCard key={feature.title} {...feature} delay={i * 45} />
+          <section className="py-20 md:py-28">
+            <div className="max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">
+                Capabilities
+              </span>
+              <h2 className="mt-4 font-serif text-3xl font-medium tracking-tight text-neutral-900 md:text-4xl">
+                Everything a great receptionist does — none of the busywork.
+              </h2>
+            </div>
+
+            <div className="mt-14 grid gap-5 md:grid-cols-3">
+              {SPOTLIGHT_FEATURES.map((feature, i) => (
+                <SpotlightFeatureCard key={feature.title} {...feature} delay={i * 70} />
               ))}
+            </div>
+
+            <div className="mt-6 grid gap-x-12 rounded-3xl border border-violet-100 bg-white/70 p-8 sm:grid-cols-2 md:p-10">
+              <div className="divide-y divide-neutral-100">
+                {MORE_FEATURES.slice(0, 5).map((feature) => (
+                  <FeatureRow key={feature.title} {...feature} />
+                ))}
+              </div>
+              <div className="divide-y divide-neutral-100">
+                {MORE_FEATURES.slice(5).map((feature) => (
+                  <FeatureRow key={feature.title} {...feature} />
+                ))}
+              </div>
             </div>
           </section>
 
           {/* Google data use */}
-          <section className="py-16 md:py-20">
-            <div className="mx-auto max-w-3xl rounded-3xl border border-violet-100 bg-violet-50/40 p-8 sm:p-10">
-              <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
+          <section className="py-6">
+            <div className="mx-auto max-w-3xl rounded-3xl border border-neutral-200 p-8 sm:p-10">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">
+                Transparency
+              </span>
+              <h2 className="mt-3 font-serif text-xl font-medium tracking-tight text-neutral-900 md:text-2xl">
                 How Oviflow uses your Google account
               </h2>
               <p className="mt-4 text-neutral-600 leading-relaxed">
@@ -271,58 +292,83 @@ export default function Home() {
           </section>
 
           {/* How it works */}
-          <section className="py-16 md:py-20">
-            <h2 className="text-center text-2xl font-semibold tracking-tight md:text-3xl">
-              Live in four steps
-            </h2>
-            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <section className="py-20 md:py-28">
+            <div className="max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">
+                Getting started
+              </span>
+              <h2 className="mt-4 font-serif text-3xl font-medium tracking-tight text-neutral-900 md:text-4xl">
+                Live in four steps.
+              </h2>
+            </div>
+            <div className="relative mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="pointer-events-none absolute left-0 right-0 top-5 hidden h-px bg-gradient-to-r from-transparent via-violet-200 to-transparent lg:block" />
               {STEPS.map((s, i) => (
-                <StepCard key={s.step} {...s} delay={i * 80} />
+                <StepItem key={s.step} {...s} delay={i * 90} />
               ))}
             </div>
           </section>
 
           {/* Who it's for */}
-          <section className="py-16 md:py-20">
-            <h2 className="text-center text-2xl font-semibold tracking-tight md:text-3xl">
-              Built for businesses that live on the phone
-            </h2>
-            <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <section className="py-20 md:py-28">
+            <div className="max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">
+                Who it&apos;s for
+              </span>
+              <h2 className="mt-4 font-serif text-3xl font-medium tracking-tight text-neutral-900 md:text-4xl">
+                Built for businesses that live on the phone.
+              </h2>
+            </div>
+            <div className="mt-14 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
               {INDUSTRIES.map((ind, i) => (
-                <IndustryCard key={ind.title} {...ind} delay={i * 80} />
+                <IndustryItem key={ind.title} {...ind} index={i + 1} delay={i * 60} />
               ))}
             </div>
           </section>
 
           {/* Pricing */}
-          <section className="py-16 md:py-20">
-            <h2 className="text-center text-2xl font-semibold tracking-tight md:text-3xl">
-              Simple, transparent pricing
-            </h2>
-            <p className="mt-3 text-center text-neutral-500">
-              Every plan includes everything — you only pick how many minutes you need.
-            </p>
-            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <section className="py-20 md:py-28">
+            <div className="max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">
+                Pricing
+              </span>
+              <h2 className="mt-4 font-serif text-3xl font-medium tracking-tight text-neutral-900 md:text-4xl">
+                Simple, transparent pricing.
+              </h2>
+              <p className="mt-3 text-neutral-500">
+                Every plan includes everything — you only pick how many minutes you need.
+              </p>
+            </div>
+            <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-3">
               {PLANS.map((plan, i) => (
                 <PricingCard key={plan.id} plan={plan} popular={i === 1} delay={i * 100} />
               ))}
             </div>
-            <p className="mt-6 text-center text-xs text-neutral-400">
+            <p className="mt-8 text-center text-xs text-neutral-400">
               A${OVERAGE_RATE_AUD_PER_MIN.toFixed(2)}/min if you go over your plan&apos;s included
               minutes — no surprise cutoffs. 14-day free trial, no card required, cancel anytime.
             </p>
           </section>
 
           {/* Final CTA */}
-          <section className="py-16 md:py-24 text-center">
-            <div className="animate-fade-in-up rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 to-indigo-50 p-12 sm:p-16">
-              <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
+          <section className="py-16 md:py-24">
+            <div className="relative animate-fade-in-up overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-violet-700 via-violet-600 to-indigo-700 px-10 py-16 text-center shadow-2xl shadow-violet-500/30 sm:px-16 sm:py-20">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.15]"
+                style={{
+                  backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+                  backgroundSize: "28px 28px",
+                }}
+              />
+              <h2 className="relative font-serif text-3xl font-medium tracking-tight text-white md:text-4xl">
                 Ready to stop missing calls?
               </h2>
-              <p className="mt-3 text-neutral-500">Set up your AI receptionist in minutes.</p>
+              <p className="relative mt-4 text-violet-100">
+                Set up your AI receptionist in minutes — free for 14 days.
+              </p>
               <Link
                 href="/signup"
-                className="mt-8 inline-block rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-3 text-sm font-medium text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all"
+                className="relative mt-9 inline-block rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-violet-700 shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all"
               >
                 Get started free
               </Link>
@@ -346,7 +392,62 @@ export default function Home() {
   );
 }
 
-function FeatureCard({
+/** A refined, static mockup of a live call in progress — the hero's visual anchor instead of a mascot. */
+function CallMockup() {
+  const bars = [0.4, 0.7, 0.5, 0.9, 0.6, 0.35, 0.8, 0.5];
+  return (
+    <div className="relative mx-auto max-w-sm">
+      <div className="absolute -inset-8 -z-10 rounded-[2.5rem] bg-gradient-to-br from-violet-200/50 to-indigo-200/40 blur-3xl" />
+      <div className="relative rounded-[1.75rem] border border-violet-100 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_40px_70px_-24px_rgba(124,58,237,0.35)]">
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-glow-pulse" />
+            Live call
+          </span>
+          <span className="font-mono text-xs text-neutral-400">00:47</span>
+        </div>
+
+        <div className="mt-5 flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 font-serif text-base text-white shadow-md shadow-violet-500/25">
+            O
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-neutral-900">Answered by your AI</p>
+            <p className="text-xs text-neutral-400">+61 4XX XXX XXX</p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex h-9 items-end gap-1.5">
+          {bars.map((h, i) => (
+            <span
+              key={i}
+              className="w-[3px] shrink-0 rounded-full bg-gradient-to-t from-violet-500 to-indigo-400 animate-eq-bounce"
+              style={{ height: `${h * 100}%`, animationDelay: `${i * 90}ms` }}
+            />
+          ))}
+        </div>
+
+        <div className="mt-6 space-y-2.5 rounded-2xl bg-violet-50/60 p-4 text-xs leading-relaxed text-neutral-600">
+          <p>
+            <span className="font-medium text-neutral-800">Caller:</span> &ldquo;Do you have a
+            table for four, tonight around 7?&rdquo;
+          </p>
+          <p>
+            <span className="font-medium text-violet-700">AI:</span> &ldquo;Let me check... yes,
+            I&apos;ve got 7:15 — I&apos;ll lock that in for you now.&rdquo;
+          </p>
+        </div>
+
+        <div className="mt-4 flex items-center gap-2 text-xs font-medium text-violet-700">
+          <CheckIcon />
+          Reservation booked · confirmation texted
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SpotlightFeatureCard({
   title,
   description,
   icon,
@@ -360,20 +461,40 @@ function FeatureCard({
   return (
     <div
       style={{ animationDelay: `${delay}ms` }}
-      className="group animate-fade-in-up flex items-start gap-4 rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-1 hover:border-violet-300 hover:shadow-lg hover:shadow-violet-500/15"
+      className="group animate-fade-in-up rounded-3xl border border-violet-100 bg-white p-7 transition-all hover:-translate-y-1 hover:border-violet-300 hover:shadow-xl hover:shadow-violet-500/15"
     >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md shadow-violet-500/25 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md shadow-violet-500/25 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
         <FeatureIcon name={icon} />
       </div>
+      <p className="mt-5 font-serif text-lg font-medium text-neutral-900">{title}</p>
+      <p className="mt-2 text-sm leading-relaxed text-neutral-500">{description}</p>
+    </div>
+  );
+}
+
+function FeatureRow({
+  title,
+  description,
+  icon,
+}: {
+  title: string;
+  description: string;
+  icon: string;
+}) {
+  return (
+    <div className="flex items-start gap-4 py-4 first:pt-0 last:pb-0">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+        <FeatureIcon name={icon} />
+      </span>
       <div>
-        <p className="font-semibold text-neutral-900">{title}</p>
-        <p className="mt-1 text-sm text-neutral-500 leading-relaxed">{description}</p>
+        <p className="text-sm font-semibold text-neutral-900">{title}</p>
+        <p className="mt-0.5 text-sm leading-relaxed text-neutral-500">{description}</p>
       </div>
     </div>
   );
 }
 
-function StepCard({
+function StepItem({
   step,
   title,
   description,
@@ -385,35 +506,35 @@ function StepCard({
   delay: number;
 }) {
   return (
-    <div
-      style={{ animationDelay: `${delay}ms` }}
-      className="animate-fade-in-up rounded-2xl border border-violet-100 bg-white p-6 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-500/10"
-    >
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-semibold text-white shadow-md shadow-violet-500/25">
+    <div style={{ animationDelay: `${delay}ms` }} className="relative animate-fade-in-up">
+      <span className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border border-violet-200 bg-white font-serif text-base text-violet-700 shadow-sm">
         {step}
       </span>
-      <p className="mt-4 font-semibold text-neutral-900">{title}</p>
-      <p className="mt-1 text-sm text-neutral-500 leading-relaxed">{description}</p>
+      <p className="mt-5 font-semibold text-neutral-900">{title}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-neutral-500">{description}</p>
     </div>
   );
 }
 
-function IndustryCard({
+function IndustryItem({
   title,
   description,
+  index,
   delay,
 }: {
   title: string;
   description: string;
+  index: number;
   delay: number;
 }) {
   return (
     <div
       style={{ animationDelay: `${delay}ms` }}
-      className="animate-fade-in-up rounded-2xl border border-violet-100 bg-white p-6 text-center transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-500/10"
+      className="animate-fade-in-up border-t border-neutral-200 pt-5"
     >
-      <p className="font-semibold text-neutral-900 mb-2">{title}</p>
-      <p className="text-sm text-neutral-500 leading-relaxed">{description}</p>
+      <span className="font-mono text-xs text-violet-400">{String(index).padStart(2, "0")}</span>
+      <p className="mt-2 font-semibold text-neutral-900">{title}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-neutral-500">{description}</p>
     </div>
   );
 }
@@ -430,23 +551,23 @@ function PricingCard({
   return (
     <div
       style={{ animationDelay: `${delay}ms` }}
-      className={`animate-fade-in-up relative flex flex-col rounded-2xl border p-6 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/15 ${
+      className={`animate-fade-in-up relative flex flex-col rounded-3xl border p-7 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/15 ${
         popular ? "border-violet-300 bg-violet-50/50" : "border-neutral-200 bg-white"
       }`}
     >
       {popular && (
-        <span className="absolute -top-2.5 left-6 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+        <span className="absolute -top-2.5 left-7 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
           Popular
         </span>
       )}
       <p className="text-sm font-medium text-neutral-500">{plan.name}</p>
-      <p className="mt-1 text-4xl font-semibold tracking-tight text-neutral-900">
+      <p className="mt-2 font-serif text-4xl font-medium tracking-tight text-neutral-900">
         A${plan.priceAud}
-        <span className="text-sm font-normal text-neutral-400">/mo</span>
+        <span className="font-sans text-sm font-normal text-neutral-400">/mo</span>
       </p>
-      <p className="mt-1 text-sm text-violet-700 font-medium">{plan.minutesIncluded} minutes included</p>
+      <p className="mt-1 text-sm font-medium text-violet-700">{plan.minutesIncluded} minutes included</p>
 
-      <ul className="mt-5 space-y-2.5 flex-1">
+      <ul className="mt-6 space-y-2.5 flex-1">
         {COMMON_PLAN_FEATURES.map((f) => (
           <li key={f} className="flex items-start gap-2 text-sm text-neutral-600">
             <CheckIcon />
@@ -457,7 +578,7 @@ function PricingCard({
 
       <Link
         href="/signup"
-        className={`mt-6 block rounded-xl px-5 py-2.5 text-center text-sm font-medium transition-all ${
+        className={`mt-7 block rounded-xl px-5 py-2.5 text-center text-sm font-medium transition-all ${
           popular
             ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/35 hover:-translate-y-0.5"
             : "border border-neutral-200 text-neutral-700 hover:border-violet-200 hover:bg-violet-50"
@@ -498,7 +619,7 @@ function FeatureIcon({ name }: { name: string }) {
     case "forward":
       return (
         <svg {...props}>
-          <path d="M13 5l6 6-6 6M4 11h15" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M13 5l6 6-6 6M4 11h15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     case "shield":
@@ -506,17 +627,17 @@ function FeatureIcon({ name }: { name: string }) {
         <svg {...props}>
           <path
             d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="2"
             strokeLinejoin="round"
           />
-          <path d="M9 12l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     case "transfer":
       return (
         <svg {...props}>
-          <path d="M17 2l4 4-4 4M21 6H8M7 22l-4-4 4-4M3 18h13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M17 2l4 4-4 4M21 6H8M7 22l-4-4 4-4M3 18h13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     case "calendar":
@@ -529,7 +650,7 @@ function FeatureIcon({ name }: { name: string }) {
     case "table":
       return (
         <svg {...props}>
-          <path d="M3 8h18M3 8v10M21 8v10M7 8v10M17 8v10" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          <path d="M3 8h18M3 8v10M21 8v10M7 8v10M17 8v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case "menu":
@@ -537,7 +658,7 @@ function FeatureIcon({ name }: { name: string }) {
         <svg {...props}>
           <path
             d="M7 3v18M17 3v6a3 3 0 01-6 0V3m3 8v10"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -547,8 +668,8 @@ function FeatureIcon({ name }: { name: string }) {
     case "globe":
       return (
         <svg {...props}>
-          <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-          <path d="M3 12h18M12 3c2.5 2.5 3.8 6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-6-3.8-9s1.3-6.5 3.8-9z" stroke="white" strokeWidth="2" />
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+          <path d="M3 12h18M12 3c2.5 2.5 3.8 6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-6-3.8-9s1.3-6.5 3.8-9z" stroke="currentColor" strokeWidth="2" />
         </svg>
       );
     case "waveform":
@@ -556,7 +677,7 @@ function FeatureIcon({ name }: { name: string }) {
         <svg {...props}>
           <path
             d="M4 12v2M8 8v10M12 5v16M16 8v10M20 12v2"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
           />
@@ -567,7 +688,7 @@ function FeatureIcon({ name }: { name: string }) {
         <svg {...props}>
           <path
             d="M12 3v13m0 0l-4-4m4 4l4-4M4 19h16"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -579,18 +700,18 @@ function FeatureIcon({ name }: { name: string }) {
         <svg {...props}>
           <path
             d="M7 3h7l5 5v13H7V3z"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="2"
             strokeLinejoin="round"
           />
-          <path d="M14 3v5h5M9 13h6M9 17h6" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          <path d="M14 3v5h5M9 13h6M9 17h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case "dollar":
       return (
         <svg {...props}>
-          <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-          <path d="M12 7v10M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1-3 2.3c0 3 6 1.4 6 4.4 0 1.3-1.3 2.3-3 2.3s-3-1.1-3-2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+          <path d="M12 7v10M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1-3 2.3c0 3 6 1.4 6 4.4 0 1.3-1.3 2.3-3 2.3s-3-1.1-3-2.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       );
     case "chat":
@@ -608,8 +729,8 @@ function FeatureIcon({ name }: { name: string }) {
     case "lock":
       return (
         <svg {...props}>
-          <rect x="5" y="11" width="14" height="10" rx="2" stroke="white" strokeWidth="2" />
-          <path d="M8 11V7a4 4 0 018 0v4" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="2" />
+          <path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     default:
