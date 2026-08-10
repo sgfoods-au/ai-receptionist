@@ -141,7 +141,11 @@ function OnboardForm() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
   const [livePhone, setLivePhone] = useState<string | null>(null);
-  const [previewNumber, setPreviewNumber] = useState("");
+  // null = "hasn't typed in this field yet" so it can default to whatever
+  // phone number they've entered on the basics step but still be
+  // cleared/edited — an empty string would make a manual clear immediately
+  // snap back to the default.
+  const [previewNumber, setPreviewNumber] = useState<string | null>(null);
   const [previewLanguage, setPreviewLanguage] = useState("en");
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewResult, setPreviewResult] = useState<{ success: boolean; message: string } | null>(
@@ -153,6 +157,7 @@ function OnboardForm() {
   const previewLanguageEffective = form.languages.includes(previewLanguage)
     ? previewLanguage
     : (form.languages[0] ?? "en");
+  const previewNumberValue = previewNumber ?? form.owner_phone;
   const [gbpError, setGbpError] = useState(false);
   const [menuUploading, setMenuUploading] = useState(false);
 
@@ -370,7 +375,7 @@ function OnboardForm() {
   }
 
   async function handlePreviewCall() {
-    const number = previewNumber || form.owner_phone;
+    const number = previewNumberValue;
     if (!number) return;
     const language = previewLanguageEffective;
     setPreviewLoading(true);
@@ -1064,15 +1069,15 @@ function OnboardForm() {
                     <div className="flex gap-2">
                       <input
                         type="tel"
-                        placeholder={form.owner_phone || "Your phone number"}
-                        value={previewNumber}
+                        placeholder="Your phone number"
+                        value={previewNumberValue}
                         onChange={(e) => setPreviewNumber(e.target.value)}
                         className={inputClass}
                       />
                       <button
                         type="button"
                         onClick={handlePreviewCall}
-                        disabled={previewLoading || !(previewNumber || form.owner_phone)}
+                        disabled={previewLoading || !previewNumberValue}
                         className="shrink-0 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-40 transition-colors"
                       >
                         {previewLoading ? "Calling..." : "Call me to preview"}
