@@ -60,6 +60,16 @@ const FEATURES = [
     icon: "document",
   },
   {
+    title: "Website chat widget",
+    description: "Embed the same AI and tools on your site — included with the Pro plan.",
+    icon: "chat",
+  },
+  {
+    title: "Update by phone",
+    description: "Call in with a PIN to update hours, pricing, or FAQs — no dashboard needed.",
+    icon: "lock",
+  },
+  {
     title: "Costs you can see",
     description: "Every call's real cost, broken down in AUD — not a black box.",
     icon: "dollar",
@@ -581,6 +591,25 @@ function FeatureIcon({ name }: { name: string }) {
         <svg {...props}>
           <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
           <path d="M12 7v10M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1-3 2.3c0 3 6 1.4 6 4.4 0 1.3-1.3 2.3-3 2.3s-3-1.1-3-2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    case "chat":
+      return (
+        <svg {...props}>
+          <path
+            d="M4 4h16v11H7l-3 3V4z"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "lock":
+      return (
+        <svg {...props}>
+          <rect x="5" y="11" width="14" height="10" rx="2" stroke="white" strokeWidth="2" />
+          <path d="M8 11V7a4 4 0 018 0v4" stroke="white" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     default:
