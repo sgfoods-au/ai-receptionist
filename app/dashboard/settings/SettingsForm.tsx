@@ -132,6 +132,12 @@ export function SettingsForm({
   const [previewResult, setPreviewResult] = useState<{ success: boolean; message: string } | null>(
     null
   );
+  // Falls back to the business's first selected language if the chosen
+  // preview language was deselected (or is still the "en" default and the
+  // business doesn't speak English) — always resolves to something valid.
+  const previewLanguageEffective = form.languages.includes(previewLanguage)
+    ? previewLanguage
+    : (form.languages[0] ?? "en");
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -250,7 +256,7 @@ export function SettingsForm({
   async function handlePreviewCall() {
     const number = previewNumber || form.owner_phone;
     if (!number) return;
-    const language = form.languages.includes(previewLanguage) ? previewLanguage : form.languages[0] ?? "en";
+    const language = previewLanguageEffective;
     setPreviewLoading(true);
     setPreviewResult(null);
     try {
@@ -742,18 +748,18 @@ export function SettingsForm({
         <div className="mt-6 rounded-xl border border-neutral-200 bg-violet-50/40 p-4">
           <p className="text-sm font-medium text-neutral-800 mb-1">Want to hear it first?</p>
           <p className="text-xs text-neutral-500 mb-3">
-            We&apos;ll call your phone with a short sample of the {form.voice_id} voice.
+            We&apos;ll call your phone with a short sample of the {form.voice_id} voice, in{" "}
+            {LANGUAGES.find((l) => l.value === previewLanguageEffective)?.label ??
+              previewLanguageEffective}
+            .
           </p>
-          {form.languages.length > 1 && (
+          {form.languages.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
               {form.languages.map((code) => (
                 <Pill
                   key={code}
                   label={LANGUAGES.find((l) => l.value === code)?.label ?? code}
-                  selected={
-                    (form.languages.includes(previewLanguage) ? previewLanguage : form.languages[0]) ===
-                    code
-                  }
+                  selected={previewLanguageEffective === code}
                   onClick={() => setPreviewLanguage(code)}
                 />
               ))}
