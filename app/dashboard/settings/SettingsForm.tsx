@@ -114,7 +114,14 @@ function formFromBusiness(business: Business): FormState {
   };
 }
 
-export function SettingsForm({ business }: { business: Business }) {
+export function SettingsForm({
+  business,
+  embedded = false,
+}: {
+  business: Business;
+  /** True when rendered inside the dashboard's tabs rather than its own standalone page — hides the "Back to dashboard" button, which doesn't make sense when you're already on the dashboard. */
+  embedded?: boolean;
+}) {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(() => formFromBusiness(business));
   const [saving, setSaving] = useState(false);
@@ -708,9 +715,11 @@ export function SettingsForm({ business }: { business: Business }) {
             <span />
           )}
           <div className="flex gap-3 ml-auto">
-            <button type="button" onClick={() => router.push("/dashboard")} className={SECONDARY_BTN}>
-              Back to dashboard
-            </button>
+            {!embedded && (
+              <button type="button" onClick={() => router.push("/dashboard")} className={SECONDARY_BTN}>
+                Back to dashboard
+              </button>
+            )}
             <button type="button" onClick={handleSave} disabled={saving} className={PRIMARY_BTN}>
               {saving ? "Saving..." : "Save changes"}
             </button>

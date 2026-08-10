@@ -205,34 +205,6 @@ export function CardHeading({
   );
 }
 
-/**
- * Groups a page into clearly labeled sections — an eyebrow + heading above
- * a hairline top border, same editorial device as the landing page. Used
- * to partition pages that otherwise read as one flat pile of cards (e.g.
- * the dashboard, which grew card-by-card with no grouping).
- */
-export function SectionHeading({
-  eyebrow,
-  title,
-  description,
-}: {
-  eyebrow: string;
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className="border-t border-neutral-100 pt-8 sm:pt-10">
-      <span className="text-xs font-semibold uppercase tracking-[0.15em] text-violet-600">
-        {eyebrow}
-      </span>
-      <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-900 sm:text-2xl">
-        {title}
-      </h2>
-      {description && <p className="mt-1.5 text-sm text-neutral-500">{description}</p>}
-    </div>
-  );
-}
-
 /** Collapsed-by-default section for long instructional text — keeps cards
  * visual/scannable by default, details available on demand. */
 export function Disclosure({ label, children }: { label: string; children: ReactNode }) {
