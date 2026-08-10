@@ -1,5 +1,7 @@
-import { CARD, CardHeading, PRIMARY_BTN } from "@/app/dashboard/components/ui";
+import { CARD, CardHeading, PRIMARY_BTN, SECONDARY_BTN } from "@/app/dashboard/components/ui";
 import type { Business } from "@/lib/types";
+
+const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/u/0/r";
 
 export function AppointmentsCard({ business }: { business: Business }) {
   return (
@@ -37,6 +39,17 @@ export function AppointmentsCard({ business }: { business: Business }) {
             Reconnect
           </a>
         </div>
+      )}
+
+      {business.google_calendar_connected && (
+        <a
+          href={GOOGLE_CALENDAR_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`mt-4 inline-block ${SECONDARY_BTN}`}
+        >
+          Open Google Calendar ↗
+        </a>
       )}
     </div>
   );
