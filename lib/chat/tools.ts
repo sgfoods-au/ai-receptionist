@@ -130,7 +130,9 @@ export async function runChatTool(
       const startTime = String(args.startTime ?? "");
       const durationMinutes = Number(args.durationMinutes) || 30;
       const customerName = String(args.customerName ?? "Website visitor");
-      const customerPhone = args.customerPhone ? String(args.customerPhone) : "";
+      const customerPhone = args.customerPhone
+        ? toE164Australian(String(args.customerPhone)) ?? String(args.customerPhone)
+        : "";
       const notes = args.notes ? String(args.notes) : "";
 
       const start = new Date(startTime);
@@ -156,7 +158,9 @@ export async function runChatTool(
       const startTime = String(args.startTime ?? "");
       const partySize = Number(args.partySize) || 0;
       const customerName = String(args.customerName ?? "Website visitor");
-      const customerPhone = args.customerPhone ? String(args.customerPhone) : "";
+      const customerPhone = args.customerPhone
+        ? toE164Australian(String(args.customerPhone)) ?? String(args.customerPhone)
+        : "";
       const notes = args.notes ? String(args.notes) : "";
 
       if (partySize < 1) return "I need to know how many guests before I can book a table.";

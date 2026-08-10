@@ -64,7 +64,9 @@ export async function POST(request: Request) {
         const startTime = String(args.startTime ?? "");
         const durationMinutes = Number(args.durationMinutes) || 30;
         const customerName = String(args.customerName ?? "Caller");
-        const customerPhone = args.customerPhone ? String(args.customerPhone) : "";
+        const customerPhone = args.customerPhone
+          ? toE164Australian(String(args.customerPhone)) ?? String(args.customerPhone)
+          : "";
         const notes = args.notes ? String(args.notes) : "";
 
         const start = new Date(startTime);

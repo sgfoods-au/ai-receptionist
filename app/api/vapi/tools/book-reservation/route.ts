@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { isSlotAvailable, createReservation } from "@/lib/reservations/availability";
+import { toE164Australian } from "@/lib/phone";
 import type { Business, RestaurantData } from "@/lib/types";
 
 interface VapiToolCall {
@@ -64,7 +65,9 @@ export async function POST(request: Request) {
         const startTime = String(args.startTime ?? "");
         const partySize = Number(args.partySize) || 0;
         const customerName = String(args.customerName ?? "Caller");
-        const customerPhone = args.customerPhone ? String(args.customerPhone) : "";
+        const customerPhone = args.customerPhone
+          ? toE164Australian(String(args.customerPhone)) ?? String(args.customerPhone)
+          : "";
         const notes = args.notes ? String(args.notes) : "";
 
         if (partySize < 1) {
