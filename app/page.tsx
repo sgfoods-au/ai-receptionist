@@ -392,6 +392,32 @@ export default function Home() {
   );
 }
 
+/**
+ * The Oviflow bot mark — the same speech-bubble-with-typing-dots shape as
+ * the "o" in the wordmark logo, not a generic letter avatar. The three
+ * dots pulse in sequence like a live typing indicator, which the shape
+ * already reads as.
+ */
+function BotMark() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 3.5c-5 0-9 3.4-9 7.6 0 2.5 1.4 4.7 3.6 6.1l-.9 3.3 3.7-1.8c.8.2 1.7.3 2.6.3 5 0 9-3.4 9-7.6s-4-7.6-9-7.6z"
+        fill="white"
+      />
+      <circle cx="8.6" cy="11.2" r="1.15" fill="url(#botDotGradient)" className="animate-typing-dot" style={{ animationDelay: "0ms" }} />
+      <circle cx="12" cy="11.2" r="1.15" fill="url(#botDotGradient)" className="animate-typing-dot" style={{ animationDelay: "150ms" }} />
+      <circle cx="15.4" cy="11.2" r="1.15" fill="url(#botDotGradient)" className="animate-typing-dot" style={{ animationDelay: "300ms" }} />
+      <defs>
+        <linearGradient id="botDotGradient" x1="0" y1="0" x2="24" y2="24">
+          <stop offset="0%" stopColor="#7c3aed" />
+          <stop offset="100%" stopColor="#4f46e5" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
 /** A refined, static mockup of a live call in progress — the hero's visual anchor instead of a mascot. */
 function CallMockup() {
   const bars = [0.4, 0.7, 0.5, 0.9, 0.6, 0.35, 0.8, 0.5];
@@ -408,8 +434,8 @@ function CallMockup() {
         </div>
 
         <div className="mt-5 flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 font-serif text-base text-white shadow-md shadow-violet-500/25">
-            O
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 shadow-md shadow-violet-500/25">
+            <BotMark />
           </div>
           <div>
             <p className="text-sm font-semibold text-neutral-900">Answered by your AI</p>
