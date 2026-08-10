@@ -8,6 +8,7 @@ import { AppointmentsCard } from "@/app/dashboard/components/AppointmentsCard";
 import { ReservationsCard } from "@/app/dashboard/components/ReservationsCard";
 import { PhoneUpdatesCard } from "@/app/dashboard/components/PhoneUpdatesCard";
 import { DeliveryCard } from "@/app/dashboard/components/DeliveryCard";
+import { ChatWidgetCard } from "@/app/dashboard/components/ChatWidgetCard";
 import { Logo } from "@/app/components/ui";
 import type { Business, Reservation } from "@/lib/types";
 
@@ -36,6 +37,7 @@ export default async function DashboardPage() {
     .maybeSingle();
 
   const biz = business as Business | null;
+  const appBaseUrl = process.env.APP_BASE_URL ?? "";
 
   let reservations: Reservation[] = [];
   if (biz && biz.industry === "restaurant") {
@@ -128,6 +130,9 @@ export default async function DashboardPage() {
               </div>
               <div style={{ animationDelay: "220ms" }} className="animate-fade-in-up">
                 <PhoneUpdatesCard business={biz} />
+              </div>
+              <div style={{ animationDelay: "260ms" }} className="animate-fade-in-up">
+                <ChatWidgetCard business={biz} appBaseUrl={appBaseUrl} />
               </div>
             </div>
 

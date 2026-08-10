@@ -101,6 +101,7 @@ export interface Business {
   google_calendar_email: string | null;
   update_pin: string | null;
   delivery_integration: DeliveryIntegration | null;
+  chat_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -153,6 +154,23 @@ export interface Reservation {
   notes: string | null;
   status: "confirmed" | "cancelled";
   created_at: string;
+}
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatSession {
+  id: string;
+  business_id: string;
+  visitor_name: string | null;
+  visitor_email: string | null;
+  visitor_phone: string | null;
+  messages: ChatMessage[];
+  status: "open" | "closed";
+  created_at: string;
+  updated_at: string;
 }
 
 export interface BusinessOnboardingInput {

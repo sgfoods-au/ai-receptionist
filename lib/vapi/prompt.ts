@@ -6,12 +6,89 @@ import type {
   RestaurantData,
 } from "@/lib/types";
 
-/** Builds the system prompt fed to the Vapi assistant from a business's onboarding data. */
-export function buildSystemPrompt(business: Business): string {
+export interface IndustryContext {
+  mortgageBrokerData: MortgageBrokerData | null;
+  restaurantData: RestaurantData | null;
+  drivingSchoolData: DrivingSchoolData | null;
+  carServiceData: CarServiceData | null;
+}
+
+/** Casts business.industry_data to the right shape for the business's industry, once. */
+export function getIndustryContext(business: Business): IndustryContext {
+  return {
+    mortgageBrokerData:
+      business.industry === "mortgage_broker" ? (business.industry_data as MortgageBrokerData | null) : null,
+    restaurantData:
+      business.industry === "restaurant" ? (business.industry_data as RestaurantData | null) : null,
+    drivingSchoolData:
+      business.industry === "driving_school" ? (business.industry_data as DrivingSchoolData | null) : null,
+    carServiceData:
+      business.industry === "car_service" ? (business.industry_data as CarServiceData | null) : null,
+  };
+}
+
+function buildIndustrySection(ctx: IndustryContext): string {
+  const { mortgageBrokerData, restaurantData, drivingSchoolData, carServiceData } = ctx;
+
+  if (mortgageBrokerData) {
+    return `\nLoan types offered: ${mortgageBrokerData.loan_types?.length ? mortgageBrokerData.loan_types.join(", ") : "Not specified"}
+Lender panel: ${mortgageBrokerData.lenders || "Not specified"}
+Documents typically required for an application: ${mortgageBrokerData.required_documents || "Not specified"}
+Licensed to operate in: ${mortgageBrokerData.licensed_regions || "Not specified"}\n`;
+  }
+  if (restaurantData) {
+    return `\nDietary options catered for: ${restaurantData.dietary_options?.length ? restaurantData.dietary_options.join(", ") : "Not specified"}
+Menu highlights: ${restaurantData.menu_highlights || "Not specified"}
+Today's specials: ${restaurantData.daily_specials || "Not specified"}
+Reservation policy: ${restaurantData.reservation_policy || "Not specified"}
+Delivery/takeout options: ${restaurantData.delivery_takeout || "Not specified"}
+${
+  restaurantData.menu_extracted_text
+    ? `\nFull menu (use this for prices, dish details, and suggestions — don't invent items not listed here):\n${restaurantData.menu_extracted_text}\n`
+    : ""
+}\n`;
+  }
+  if (drivingSchoolData) {
+    return `\nLesson types offered: ${drivingSchoolData.lesson_types?.length ? drivingSchoolData.lesson_types.join(", ") : "Not specified"}
+Vehicle types available: ${drivingSchoolData.vehicle_types?.length ? drivingSchoolData.vehicle_types.join(", ") : "Not specified"}
+License classes taught: ${drivingSchoolData.license_classes?.length ? drivingSchoolData.license_classes.join(", ") : "Not specified"}
+Instructors: ${drivingSchoolData.instructor_names || "Not specified"}
+Standard lesson length: ${drivingSchoolData.lesson_duration_minutes} minutes
+Pickup provided: ${drivingSchoolData.pickup_provided ? "Yes" : "No"}\n`;
+  }
+  if (carServiceData) {
+    return `\nServices offered: ${carServiceData.service_types?.length ? carServiceData.service_types.join(", ") : "Not specified"}
+Makes/models serviced: ${carServiceData.makes_serviced || "Not specified"}
+Loan car available: ${carServiceData.loan_car_available ? "Yes" : "No"}
+Pickup/drop-off offered: ${carServiceData.pickup_dropoff_offered ? "Yes" : "No"}
+Typical service duration: ${carServiceData.typical_service_duration_minutes} minutes\n`;
+  }
+  return "";
+}
+
+/**
+ * The channel-agnostic block of business facts (hours, services, pricing,
+ * industry-specific details, FAQs, owner notes) shared verbatim by every
+ * assistant surface — voice (buildSystemPrompt below) and the website chat
+ * widget (lib/chat/prompt.ts) — so the two channels can never drift apart
+ * on what they know about the business.
+ */
+export function buildBusinessFactsBlock(business: Business): string {
   const faqLines = (business.faqs ?? [])
     .map((faq) => `- Q: ${faq.question}\n  A: ${faq.answer}`)
     .join("\n");
+  const industrySection = buildIndustrySection(getIndustryContext(business));
 
+  return `Business hours: ${business.business_hours || "Not specified"}
+Services offered: ${business.services || "Not specified"}
+Pricing info: ${business.pricing_info || "Not specified"}
+Service area: ${business.service_area || "Not specified"}
+${industrySection}${faqLines ? `\nFrequently asked questions:\n${faqLines}` : ""}
+${business.additional_notes ? `\nAdditional information from the business owner:\n${business.additional_notes}\n` : ""}`;
+}
+
+/** Builds the system prompt fed to the Vapi assistant from a business's onboarding data. */
+export function buildSystemPrompt(business: Business): string {
   const languages = business.languages?.length ? business.languages : ["en"];
   const speaksHindi = languages.includes("hi");
 
@@ -19,15 +96,7 @@ export function buildSystemPrompt(business: Business): string {
     ? "\nIf the caller explicitly insists on speaking to a real person, or asks something clearly outside what you can resolve from the information above, offer to transfer them to the owner now using the transferCall tool, rather than just taking a message.\n"
     : "";
 
-  const drivingSchoolData =
-    business.industry === "driving_school"
-      ? (business.industry_data as DrivingSchoolData | null)
-      : null;
-
-  const carServiceData =
-    business.industry === "car_service"
-      ? (business.industry_data as CarServiceData | null)
-      : null;
+  const { drivingSchoolData, carServiceData } = getIndustryContext(business);
 
   const bookingSection = business.google_calendar_connected
     ? drivingSchoolData
@@ -59,52 +128,9 @@ export function buildSystemPrompt(business: Business): string {
       ? "\nYou can arrange real delivery. When a caller wants their order delivered, confirm what they want, their delivery address, and their phone number, then call the dispatch_delivery tool to actually book the courier — don't just say you'll arrange it.\n"
       : "";
 
-  const mortgageBrokerData =
-    business.industry === "mortgage_broker"
-      ? (business.industry_data as MortgageBrokerData | null)
-      : null;
-  const restaurantData =
-    business.industry === "restaurant" ? (business.industry_data as RestaurantData | null) : null;
-
-  const industrySection = mortgageBrokerData
-    ? `\nLoan types offered: ${mortgageBrokerData.loan_types?.length ? mortgageBrokerData.loan_types.join(", ") : "Not specified"}
-Lender panel: ${mortgageBrokerData.lenders || "Not specified"}
-Documents typically required for an application: ${mortgageBrokerData.required_documents || "Not specified"}
-Licensed to operate in: ${mortgageBrokerData.licensed_regions || "Not specified"}\n`
-    : restaurantData
-      ? `\nDietary options catered for: ${restaurantData.dietary_options?.length ? restaurantData.dietary_options.join(", ") : "Not specified"}
-Menu highlights: ${restaurantData.menu_highlights || "Not specified"}
-Today's specials: ${restaurantData.daily_specials || "Not specified"}
-Reservation policy: ${restaurantData.reservation_policy || "Not specified"}
-Delivery/takeout options: ${restaurantData.delivery_takeout || "Not specified"}
-${
-  restaurantData.menu_extracted_text
-    ? `\nFull menu (use this for prices, dish details, and suggestions — don't invent items not listed here):\n${restaurantData.menu_extracted_text}\n`
-    : ""
-}\n`
-      : drivingSchoolData
-        ? `\nLesson types offered: ${drivingSchoolData.lesson_types?.length ? drivingSchoolData.lesson_types.join(", ") : "Not specified"}
-Vehicle types available: ${drivingSchoolData.vehicle_types?.length ? drivingSchoolData.vehicle_types.join(", ") : "Not specified"}
-License classes taught: ${drivingSchoolData.license_classes?.length ? drivingSchoolData.license_classes.join(", ") : "Not specified"}
-Instructors: ${drivingSchoolData.instructor_names || "Not specified"}
-Standard lesson length: ${drivingSchoolData.lesson_duration_minutes} minutes
-Pickup provided: ${drivingSchoolData.pickup_provided ? "Yes" : "No"}\n`
-        : carServiceData
-          ? `\nServices offered: ${carServiceData.service_types?.length ? carServiceData.service_types.join(", ") : "Not specified"}
-Makes/models serviced: ${carServiceData.makes_serviced || "Not specified"}
-Loan car available: ${carServiceData.loan_car_available ? "Yes" : "No"}
-Pickup/drop-off offered: ${carServiceData.pickup_dropoff_offered ? "Yes" : "No"}
-Typical service duration: ${carServiceData.typical_service_duration_minutes} minutes\n`
-          : "";
-
   return `You are the AI receptionist for ${business.name}.
 
-Business hours: ${business.business_hours || "Not specified"}
-Services offered: ${business.services || "Not specified"}
-Pricing info: ${business.pricing_info || "Not specified"}
-Service area: ${business.service_area || "Not specified"}
-${industrySection}${faqLines ? `\nFrequently asked questions:\n${faqLines}` : ""}
-${business.additional_notes ? `\nAdditional information from the business owner:\n${business.additional_notes}\n` : ""}
+${buildBusinessFactsBlock(business)}
 
 Your job on every call:
 1. Greet the caller warmly and find out why they're calling.
