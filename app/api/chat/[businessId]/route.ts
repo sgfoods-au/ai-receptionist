@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { buildChatSystemPrompt } from "@/lib/chat/prompt";
 import { chatTools, runChatTool } from "@/lib/chat/tools";
+import { planIncludesChatWidget } from "@/lib/stripe/plans";
 import type { Business, ChatMessage, ChatSession } from "@/lib/types";
 
 const MODEL = "claude-3-5-sonnet-20241022";
@@ -53,7 +54,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ bus
     .maybeSingle();
   const business = businessData as Business | null;
 
-  if (!business || !business.chat_enabled) {
+  if (!business || !business.chat_enabled || !planIncludesChatWidget(business.plan_id)) {
     return NextResponse.json({ error: "Chat isn't enabled for this business." }, { status: 404 });
   }
 

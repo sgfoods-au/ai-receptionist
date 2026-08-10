@@ -1,5 +1,6 @@
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { ChatWidget } from "@/app/widget/[businessId]/components/ChatWidget";
+import { planIncludesChatWidget } from "@/lib/stripe/plans";
 import type { Business } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -18,12 +19,12 @@ export default async function WidgetPage({
 
   const { data } = await supabase
     .from("businesses")
-    .select("id, name, chat_enabled")
+    .select("id, name, chat_enabled, plan_id")
     .eq("id", businessId)
     .maybeSingle();
-  const business = data as Pick<Business, "id" | "name" | "chat_enabled"> | null;
+  const business = data as Pick<Business, "id" | "name" | "chat_enabled" | "plan_id"> | null;
 
-  if (!business || !business.chat_enabled) {
+  if (!business || !business.chat_enabled || !planIncludesChatWidget(business.plan_id)) {
     return (
       <div className="flex h-screen items-center justify-center bg-white p-6 text-center text-sm text-neutral-500">
         Chat isn&apos;t available right now.

@@ -2,15 +2,35 @@
 
 import { useState } from "react";
 import { CARD, CardHeading, PRIMARY_BTN } from "@/app/dashboard/components/ui";
+import { HIGHEST_PLAN, planIncludesChatWidget } from "@/lib/stripe/plans";
 import type { Business } from "@/lib/types";
 
 export function ChatWidgetCard({ business, appBaseUrl }: { business: Business; appBaseUrl: string }) {
+  const hasAccess = planIncludesChatWidget(business.plan_id);
   const [enabled, setEnabled] = useState(business.chat_enabled);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const snippet = `<script src="${appBaseUrl}/api/embed/widget.js" data-business="${business.id}" async></script>`;
+
+  async function handleUpgrade() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: HIGHEST_PLAN.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to start checkout.");
+      window.location.assign(data.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setLoading(false);
+    }
+  }
 
   async function handleToggle() {
     setLoading(true);
@@ -45,7 +65,20 @@ export function ChatWidgetCard({ business, appBaseUrl }: { business: Business; a
     <div className={CARD}>
       <CardHeading icon={<ChatIcon />} title="Website chat" subtitle="Same AI, embedded on your site" />
 
-      {!enabled && (
+      {!hasAccess && (
+        <>
+          <p className="mt-4 text-sm text-neutral-500">
+            Add a chat bubble to your website powered by the same AI and tools your phone
+            receptionist has — reservations, appointments, and more. This is a{" "}
+            {HIGHEST_PLAN.name} plan feature.
+          </p>
+          <button onClick={handleUpgrade} disabled={loading} className={`mt-5 ${PRIMARY_BTN}`}>
+            {loading ? "Loading..." : `Upgrade to ${HIGHEST_PLAN.name} — A$${HIGHEST_PLAN.priceAud}/mo`}
+          </button>
+        </>
+      )}
+
+      {hasAccess && !enabled && (
         <>
           <p className="mt-4 text-sm text-neutral-500">
             Add a chat bubble to your website powered by the same AI and tools your phone
@@ -57,7 +90,7 @@ export function ChatWidgetCard({ business, appBaseUrl }: { business: Business; a
         </>
       )}
 
-      {enabled && (
+      {hasAccess && enabled && (
         <>
           <p className="mt-4 text-sm text-neutral-500">
             Paste this snippet before the closing{" "}

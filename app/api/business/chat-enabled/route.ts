@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
+import { planIncludesChatWidget, HIGHEST_PLAN } from "@/lib/stripe/plans";
+import type { Business } from "@/lib/types";
 
 export async function PATCH(request: Request) {
   const supabase = await getSupabaseSessionClient();
@@ -14,6 +16,21 @@ export async function PATCH(request: Request) {
   const { chat_enabled } = (await request.json()) as { chat_enabled?: boolean };
   if (typeof chat_enabled !== "boolean") {
     return NextResponse.json({ error: "chat_enabled must be a boolean." }, { status: 400 });
+  }
+
+  if (chat_enabled) {
+    const { data: business } = await supabase
+      .from("businesses")
+      .select("plan_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!planIncludesChatWidget((business as Pick<Business, "plan_id"> | null)?.plan_id)) {
+      return NextResponse.json(
+        { error: `Website chat is only available on the ${HIGHEST_PLAN.name} plan.` },
+        { status: 403 }
+      );
+    }
   }
 
   const { data: updated, error } = await supabase

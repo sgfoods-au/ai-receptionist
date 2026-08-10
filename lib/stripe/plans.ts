@@ -42,3 +42,11 @@ export const PLANS: Plan[] = [
 export function getPlan(id: PlanId): Plan | undefined {
   return PLANS.find((p) => p.id === id);
 }
+
+/** The top plan, computed rather than hardcoded so it stays correct if PLANS is ever reordered. */
+export const HIGHEST_PLAN: Plan = PLANS.reduce((a, b) => (b.priceAud > a.priceAud ? b : a));
+
+/** Website chat is a highest-plan-only feature — gate both enabling it and actually serving it on this. */
+export function planIncludesChatWidget(planId: PlanId | null | undefined): boolean {
+  return planId === HIGHEST_PLAN.id;
+}
