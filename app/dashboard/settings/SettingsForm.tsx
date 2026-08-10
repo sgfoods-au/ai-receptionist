@@ -126,6 +126,12 @@ export function SettingsForm({
   const [form, setForm] = useState<FormState>(() => formFromBusiness(business));
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [previewNumber, setPreviewNumber] = useState("");
+  const [previewLanguage, setPreviewLanguage] = useState("en");
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewResult, setPreviewResult] = useState<{ success: boolean; message: string } | null>(
+    null
+  );
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -239,6 +245,35 @@ export function SettingsForm({
   }
   function removeFaq(index: number) {
     setForm((prev) => ({ ...prev, faqs: prev.faqs.filter((_, i) => i !== index) }));
+  }
+
+  async function handlePreviewCall() {
+    const number = previewNumber || form.owner_phone;
+    if (!number) return;
+    const language = form.languages.includes(previewLanguage) ? previewLanguage : form.languages[0] ?? "en";
+    setPreviewLoading(true);
+    setPreviewResult(null);
+    try {
+      const res = await fetch("/api/vapi/voice-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          voiceId: form.voice_id,
+          phoneNumber: number,
+          language,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to start preview call.");
+      setPreviewResult({ success: true, message: "Calling you now — answer to hear the voice!" });
+    } catch (err) {
+      setPreviewResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Failed to start preview call.",
+      });
+    } finally {
+      setPreviewLoading(false);
+    }
   }
 
   async function handleSave() {
@@ -702,6 +737,50 @@ export function SettingsForm({
               onClick={() => update("voice_id", voice.id)}
             />
           ))}
+        </div>
+
+        <div className="mt-6 rounded-xl border border-neutral-200 bg-violet-50/40 p-4">
+          <p className="text-sm font-medium text-neutral-800 mb-1">Want to hear it first?</p>
+          <p className="text-xs text-neutral-500 mb-3">
+            We&apos;ll call your phone with a short sample of the {form.voice_id} voice.
+          </p>
+          {form.languages.length > 1 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {form.languages.map((code) => (
+                <Pill
+                  key={code}
+                  label={LANGUAGES.find((l) => l.value === code)?.label ?? code}
+                  selected={
+                    (form.languages.includes(previewLanguage) ? previewLanguage : form.languages[0]) ===
+                    code
+                  }
+                  onClick={() => setPreviewLanguage(code)}
+                />
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="tel"
+              placeholder={form.owner_phone || "Your phone number"}
+              value={previewNumber}
+              onChange={(e) => setPreviewNumber(e.target.value)}
+              className={INPUT}
+            />
+            <button
+              type="button"
+              onClick={handlePreviewCall}
+              disabled={previewLoading || !(previewNumber || form.owner_phone)}
+              className="shrink-0 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-40 transition-colors"
+            >
+              {previewLoading ? "Calling..." : "Call me to preview"}
+            </button>
+          </div>
+          {previewResult && (
+            <p className={`mt-2 text-xs ${previewResult.success ? "text-emerald-600" : "text-red-600"}`}>
+              {previewResult.message}
+            </p>
+          )}
         </div>
       </Section>
 
