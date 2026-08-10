@@ -9,7 +9,7 @@ import { ReservationsCard } from "@/app/dashboard/components/ReservationsCard";
 import { PhoneUpdatesCard } from "@/app/dashboard/components/PhoneUpdatesCard";
 import { DeliveryCard } from "@/app/dashboard/components/DeliveryCard";
 import { ChatWidgetCard } from "@/app/dashboard/components/ChatWidgetCard";
-import { Logo } from "@/app/components/ui";
+import { Logo, SectionHeading } from "@/app/components/ui";
 import type { Business, Reservation } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -84,7 +84,7 @@ export default async function DashboardPage() {
         )}
 
         {biz && (
-          <div className="space-y-6 sm:space-y-8">
+          <div className="space-y-8 sm:space-y-10">
             <div className="animate-fade-in-up rounded-3xl border border-violet-100 bg-white p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_40px_-20px_rgba(139,92,246,0.2)]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xl sm:text-2xl font-semibold tracking-tight">{biz.name}</p>
@@ -117,32 +117,49 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <div style={{ animationDelay: "60ms" }} className="animate-fade-in-up">
-              <BillingCard business={biz} />
+            <div>
+              <SectionHeading eyebrow="Account" title="Billing & usage" />
+              <div style={{ animationDelay: "60ms" }} className="animate-fade-in-up mt-6">
+                <BillingCard business={biz} />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-              <div style={{ animationDelay: "120ms" }} className="animate-fade-in-up">
-                <AppointmentsCard business={biz} />
-              </div>
-              <div style={{ animationDelay: "180ms" }} className="animate-fade-in-up">
-                <CallRoutingCard business={biz} />
-              </div>
-              <div style={{ animationDelay: "220ms" }} className="animate-fade-in-up">
-                <PhoneUpdatesCard business={biz} />
-              </div>
-              <div style={{ animationDelay: "260ms" }} className="animate-fade-in-up">
-                <ChatWidgetCard business={biz} appBaseUrl={appBaseUrl} />
+            <div>
+              <SectionHeading
+                eyebrow="Configuration"
+                title="Your AI receptionist"
+                description="How it routes calls, what it can book, and how customers reach it."
+              />
+              <div className="mt-6 grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2">
+                <div style={{ animationDelay: "120ms" }} className="animate-fade-in-up">
+                  <CallRoutingCard business={biz} />
+                </div>
+                <div style={{ animationDelay: "180ms" }} className="animate-fade-in-up">
+                  <AppointmentsCard business={biz} />
+                </div>
+                <div style={{ animationDelay: "220ms" }} className="animate-fade-in-up">
+                  <PhoneUpdatesCard business={biz} />
+                </div>
+                <div style={{ animationDelay: "260ms" }} className="animate-fade-in-up">
+                  <ChatWidgetCard business={biz} appBaseUrl={appBaseUrl} />
+                </div>
               </div>
             </div>
 
             {biz.industry === "restaurant" && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-                <div style={{ animationDelay: "240ms" }} className="animate-fade-in-up">
-                  <ReservationsCard business={biz} reservations={reservations} />
-                </div>
-                <div style={{ animationDelay: "300ms" }} className="animate-fade-in-up">
-                  <DeliveryCard business={biz} />
+              <div>
+                <SectionHeading
+                  eyebrow="Restaurant"
+                  title="Reservations & delivery"
+                  description="Table bookings and courier dispatch, specific to your restaurant."
+                />
+                <div className="mt-6 grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2">
+                  <div style={{ animationDelay: "240ms" }} className="animate-fade-in-up">
+                    <ReservationsCard business={biz} reservations={reservations} />
+                  </div>
+                  <div style={{ animationDelay: "300ms" }} className="animate-fade-in-up">
+                    <DeliveryCard business={biz} />
+                  </div>
                 </div>
               </div>
             )}
