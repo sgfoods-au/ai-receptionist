@@ -7,6 +7,7 @@ import { getUsdToAudRate, formatAud } from "@/lib/currency";
 import { getRevenueByCustomer } from "@/lib/stripe/revenue";
 import { getTwilioBalance } from "@/lib/twilio/client";
 import { SignOutButton } from "@/app/components/SignOutButton";
+import { AdminBusinessActions } from "@/app/admin/components/AdminBusinessActions";
 import { Logo, PageGlow, StatCard, StatusPill } from "@/app/components/ui";
 import type { Business, Call } from "@/lib/types";
 
@@ -152,6 +153,7 @@ export default async function AdminPage() {
                   <th className="py-3 px-4 font-medium">Cost</th>
                   <th className="py-3 px-4 font-medium">Revenue</th>
                   <th className="py-3 px-4 font-medium">Last call</th>
+                  <th className="py-3 px-4 font-medium">Manage</th>
                 </tr>
               </thead>
               <tbody>
@@ -184,11 +186,14 @@ export default async function AdminPage() {
                     <td className="py-3 px-4 whitespace-nowrap text-neutral-500">
                       {lastCallAt ? new Date(lastCallAt).toLocaleDateString() : "—"}
                     </td>
+                    <td className="py-3 px-4 align-top">
+                      <AdminBusinessActions business={business} />
+                    </td>
                   </tr>
                 ))}
                 {stats.length === 0 && (
                   <tr>
-                    <td className="py-6 px-4 text-neutral-500" colSpan={9}>
+                    <td className="py-6 px-4 text-neutral-500" colSpan={10}>
                       No businesses signed up yet.
                     </td>
                   </tr>

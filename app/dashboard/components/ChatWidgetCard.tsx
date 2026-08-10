@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { CARD, CardHeading, PRIMARY_BTN } from "@/app/dashboard/components/ui";
-import { HIGHEST_PLAN, planIncludesChatWidget } from "@/lib/stripe/plans";
+import { HIGHEST_PLAN, hasChatWidgetAccess } from "@/lib/stripe/plans";
 import type { Business } from "@/lib/types";
 
 export function ChatWidgetCard({ business, appBaseUrl }: { business: Business; appBaseUrl: string }) {
-  const hasAccess = planIncludesChatWidget(business.plan_id);
+  const hasAccess = hasChatWidgetAccess(business);
   const [enabled, setEnabled] = useState(business.chat_enabled);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);

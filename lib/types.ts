@@ -102,8 +102,20 @@ export interface Business {
   update_pin: string | null;
   delivery_integration: DeliveryIntegration | null;
   chat_enabled: boolean;
+  admin_overrides: AdminOverrides;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Manual entitlement grants set from the super admin panel — e.g. comping
+ * a feature for a customer regardless of their plan or billing state.
+ * Currently only the chat widget has a real gate to override; more keys
+ * get added here as other paid add-ons (delivery dispatch, minutes packs)
+ * actually ship billing of their own.
+ */
+export interface AdminOverrides {
+  chat_widget?: boolean;
 }
 
 export type PlanId = "starter" | "growth" | "pro";

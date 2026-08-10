@@ -1,4 +1,4 @@
-import type { PlanId } from "@/lib/types";
+import type { AdminOverrides, PlanId } from "@/lib/types";
 
 export interface Plan {
   id: PlanId;
@@ -49,4 +49,17 @@ export const HIGHEST_PLAN: Plan = PLANS.reduce((a, b) => (b.priceAud > a.priceAu
 /** Website chat is a highest-plan-only feature — gate both enabling it and actually serving it on this. */
 export function planIncludesChatWidget(planId: PlanId | null | undefined): boolean {
   return planId === HIGHEST_PLAN.id;
+}
+
+/**
+ * Same chat-widget gate, but also honors a super-admin comp grant
+ * (business.admin_overrides.chat_widget) — used everywhere the plan-only
+ * check is, so an admin-granted business behaves identically to a real
+ * Pro subscriber rather than needing separate handling at each call site.
+ */
+export function hasChatWidgetAccess(business: {
+  plan_id: PlanId | null;
+  admin_overrides?: AdminOverrides | null;
+}): boolean {
+  return planIncludesChatWidget(business.plan_id) || business.admin_overrides?.chat_widget === true;
 }
