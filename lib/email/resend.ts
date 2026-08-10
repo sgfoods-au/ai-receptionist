@@ -1,6 +1,15 @@
 import { Resend } from "resend";
 import type { Business, Call } from "@/lib/types";
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function formatCallSummaryEmail(business: Business, call: Call): string {
   const callTime = call.started_at
     ? new Date(call.started_at).toLocaleString()
@@ -8,16 +17,16 @@ function formatCallSummaryEmail(business: Business, call: Call): string {
 
   return `
     <div style="font-family: sans-serif; max-width: 560px;">
-      <h2>New call for ${business.name}</h2>
-      <p><strong>Time:</strong> ${callTime}</p>
-      <p><strong>Caller number:</strong> ${call.caller_number ?? "Unknown"}</p>
-      ${call.urgency ? `<p><strong>Urgency:</strong> ${call.urgency}</p>` : ""}
+      <h2>New call for ${escapeHtml(business.name)}</h2>
+      <p><strong>Time:</strong> ${escapeHtml(callTime)}</p>
+      <p><strong>Caller number:</strong> ${escapeHtml(call.caller_number ?? "Unknown")}</p>
+      ${call.urgency ? `<p><strong>Urgency:</strong> ${escapeHtml(call.urgency)}</p>` : ""}
       ${
         call.caller_intent
-          ? `<p><strong>What they wanted:</strong> ${call.caller_intent}</p>`
+          ? `<p><strong>What they wanted:</strong> ${escapeHtml(call.caller_intent)}</p>`
           : ""
       }
-      <p><strong>Summary:</strong><br/>${call.summary ?? "No summary available."}</p>
+      <p><strong>Summary:</strong><br/>${escapeHtml(call.summary ?? "No summary available.")}</p>
       ${
         call.callback_requested
           ? `<p><em>The caller asked for a callback.</em></p>`
@@ -37,10 +46,18 @@ export async function sendCallSummaryEmail(business: Business, call: Call): Prom
 
   const resend = new Resend(apiKey);
 
-  await resend.emails.send({
+  // The Resend SDK does NOT throw on API-level failures (unverified domain,
+  // bad from-address, rate limits) — it resolves with { data: null, error }.
+  // Without this check, callers' try/catch never sees the failure, and the
+  // webhook route was marking calls as email_sent even when nothing sent.
+  const { error } = await resend.emails.send({
     from: fromEmail,
     to: business.owner_email,
     subject: `New call for ${business.name}${call.urgency === "high" ? " (urgent)" : ""}`,
     html: formatCallSummaryEmail(business, call),
   });
+
+  if (error) {
+    throw new Error(`Resend API error: ${error.name} — ${error.message}`);
+  }
 }
