@@ -144,6 +144,7 @@ export interface Business {
   google_refresh_token: string | null;
   google_calendar_email: string | null;
   update_pin: string | null;
+  twilio_subaccount_sid: string | null;
   delivery_integration: DeliveryIntegration | null;
   chat_enabled: boolean;
   admin_overrides: AdminOverrides;

@@ -398,18 +398,28 @@ export async function provisionPhoneNumber(
  * assistant-request webhook (app/api/vapi/assistant-request/route.ts),
  * which Vapi calls before answering each inbound call so we can reject
  * known spam numbers before they ever reach the assistant, then hand back
- * the business's real assistantId to proceed. Twilio auth is read from
- * TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN (same credentials used to purchase
- * the number in lib/twilio/client.ts).
+ * the business's real assistantId to proceed. Twilio auth token is always
+ * the master TWILIO_AUTH_TOKEN — master credentials authenticate for any
+ * subaccount too — but the account SID is the specific (sub)account that
+ * actually owns the number, so Vapi can find and manage it.
+ *
+ * NOTE: whether Vapi's API accepts a subaccount SID paired with the master
+ * auth token here couldn't be verified live (docs.vapi.ai/api.vapi.ai were
+ * unreachable from this dev environment) — this assumes it works the same
+ * way Twilio's own API treats that combination. If it doesn't, the caller
+ * (app/api/business/connect-au-number/route.ts) surfaces the error same as
+ * any other import failure; it does not silently proceed as if the number
+ * were live.
  */
 export async function importTwilioNumber(
   number: string,
   assistantRequestWebhookUrl: string,
-  webhookSecret: string
+  webhookSecret: string,
+  subaccountSid?: string
 ): Promise<{ phoneNumberId: string; number: string }> {
-  const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+  const masterAccountSid = process.env.TWILIO_ACCOUNT_SID;
   const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
-  if (!twilioAccountSid || !twilioAuthToken) {
+  if (!masterAccountSid || !twilioAuthToken) {
     throw new Error("Missing TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN environment variable.");
   }
 
@@ -418,7 +428,7 @@ export async function importTwilioNumber(
     body: JSON.stringify({
       provider: "twilio",
       number,
-      twilioAccountSid,
+      twilioAccountSid: subaccountSid ?? masterAccountSid,
       twilioAuthToken,
       server: { url: assistantRequestWebhookUrl, secret: webhookSecret },
     }),

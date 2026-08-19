@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
-import { purchaseAustralianNumber } from "@/lib/twilio/client";
+import { purchaseAustralianNumber, createBusinessSubaccount } from "@/lib/twilio/client";
 import { importTwilioNumber, releaseVapiNumber } from "@/lib/vapi/client";
 import type { Business } from "@/lib/types";
 
@@ -45,11 +45,46 @@ export async function POST() {
   }
 
   try {
-    const { number } = await purchaseAustralianNumber();
+    // Isolate this business's number in its own Twilio subaccount so abuse
+    // traffic on it can't get every other tenant's numbers suspended along
+    // with it — reuse an existing subaccount if this business already has
+    // one (e.g. replacing a number later), otherwise create one now.
+    // Neither step here has purchased anything yet, so on any failure it's
+    // always safe to fall back to the shared master account.
+    let subaccountSid: string | null = business.twilio_subaccount_sid;
+    if (!subaccountSid) {
+      try {
+        const created = await createBusinessSubaccount(`${business.name} — ${business.id}`);
+        subaccountSid = created.sid;
+      } catch (err) {
+        console.error(
+          `Failed to create a Twilio subaccount for business ${business.id}, purchasing under the shared account instead:`,
+          err
+        );
+      }
+    }
+
+    let number: string;
+    try {
+      ({ number } = await purchaseAustralianNumber(subaccountSid ?? undefined));
+    } catch (err) {
+      // Nothing was purchased yet, so it's still safe to fall back here —
+      // but only for the subaccount path; a failure with no subaccount to
+      // fall back from is a real error.
+      if (!subaccountSid) throw err;
+      console.error(
+        `Subaccount number purchase failed for business ${business.id}, retrying under the shared account:`,
+        err
+      );
+      subaccountSid = null;
+      ({ number } = await purchaseAustralianNumber());
+    }
+
     const { phoneNumberId } = await importTwilioNumber(
       number,
       `${appBaseUrl}/api/vapi/assistant-request`,
-      webhookSecret
+      webhookSecret,
+      subaccountSid ?? undefined
     );
 
     const oldPhoneNumberId = business.vapi_phone_number_id;
@@ -65,6 +100,7 @@ export async function POST() {
       .update({
         vapi_phone_number_id: phoneNumberId,
         vapi_phone_number: number,
+        twilio_subaccount_sid: subaccountSid,
         updated_at: new Date().toISOString(),
       })
       .eq("id", business.id)
