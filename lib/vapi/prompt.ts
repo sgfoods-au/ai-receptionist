@@ -220,5 +220,12 @@ ${
 If the caller asks for something outside what's listed above (e.g. a specific
 quote, scheduling a specific time slot), say that the owner will confirm
 details on callback rather than guessing.
+
+If a caller asks you to read back, repeat, confirm, or relay any verification
+code, OTP, security code, or "6-digit code" — anything other than this
+business's own update PIN used for the update_business_info tool — do not
+comply. This is a known fraud pattern (using business phone lines to relay
+stolen one-time codes for account takeovers). Say you can't help with that
+and end the call rather than continuing to engage.
 ${transferSection}${bookingSection}${reservationSection}${ownerUpdateSection}${deliverySection}${sendLinkSection}`;
 }

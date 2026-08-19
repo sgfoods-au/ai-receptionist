@@ -6,6 +6,7 @@ import { isAdminEmail } from "@/lib/admin";
 import { getUsdToAudRate, formatAud } from "@/lib/currency";
 import { getRevenueByCustomer } from "@/lib/stripe/revenue";
 import { getTwilioBalance } from "@/lib/twilio/client";
+import { detectBurst, ADMIN_BURST_WINDOW_MS, ADMIN_BURST_THRESHOLD } from "@/lib/abuse";
 import { SignOutButton } from "@/app/components/SignOutButton";
 import { AdminBusinessActions } from "@/app/admin/components/AdminBusinessActions";
 import { Logo, PageGlow, StatCard, StatusPill } from "@/app/components/ui";
@@ -22,30 +23,6 @@ interface BusinessStats {
   lastCallAt: string | null;
   burstFlagged: boolean;
   maxCallsInBurstWindow: number;
-}
-
-// A real caller can't place several calls to the same number within
-// seconds of each other — that pattern means a script/bot is hammering
-// the line (or testing tool transfers), not a genuine customer. Flags any
-// business with BURST_THRESHOLD+ calls inside a BURST_WINDOW_MS sliding
-// window, so it's visible in the list instead of only discoverable by
-// reading through call transcripts one by one.
-const BURST_WINDOW_MS = 60_000;
-const BURST_THRESHOLD = 3;
-
-function detectBurst(timestamps: (string | null)[]): { flagged: boolean; maxInWindow: number } {
-  const sorted = timestamps
-    .filter((t): t is string => !!t)
-    .map((t) => new Date(t).getTime())
-    .sort((a, b) => a - b);
-
-  let maxInWindow = 0;
-  let left = 0;
-  for (let right = 0; right < sorted.length; right++) {
-    while (sorted[right] - sorted[left] > BURST_WINDOW_MS) left++;
-    maxInWindow = Math.max(maxInWindow, right - left + 1);
-  }
-  return { flagged: maxInWindow >= BURST_THRESHOLD, maxInWindow };
 }
 
 export default async function AdminPage() {
@@ -79,7 +56,11 @@ export default async function AdminPage() {
 
   const stats: BusinessStats[] = allBusinesses.map((business) => {
     const businessCalls = allCalls.filter((c) => c.business_id === business.id);
-    const burst = detectBurst(businessCalls.map((c) => c.created_at));
+    const burst = detectBurst(
+      businessCalls.map((c) => c.created_at),
+      ADMIN_BURST_WINDOW_MS,
+      ADMIN_BURST_THRESHOLD
+    );
     return {
       business,
       callCount: businessCalls.length,

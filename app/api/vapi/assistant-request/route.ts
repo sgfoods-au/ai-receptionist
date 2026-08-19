@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
+import { detectBurst, LIVE_BURST_WINDOW_MS, LIVE_BURST_THRESHOLD } from "@/lib/abuse";
 import type { Business } from "@/lib/types";
 
 interface AssistantRequestMessage {
@@ -66,13 +67,56 @@ export async function POST(request: Request) {
 
   const { data } = await supabase
     .from("businesses")
-    .select("vapi_assistant_id")
+    .select("id, vapi_assistant_id")
     .eq("vapi_phone_number_id", call.phoneNumberId)
     .maybeSingle();
-  const business = data as Pick<Business, "vapi_assistant_id"> | null;
+  const business = data as Pick<Business, "id" | "vapi_assistant_id"> | null;
 
   if (!business?.vapi_assistant_id) {
     return NextResponse.json({ error: "No matching assistant." }, { status: 404 });
+  }
+
+  // Live circuit breaker: reject the call before it's ever answered if this
+  // number is getting hammered by an auto-dialer/bot right now. Checked
+  // against call *attempts*, not the calls table (which only gets a row once
+  // a call ends) — a genuinely concurrent flood never reaches the calls
+  // table until each leg finishes, so it would otherwise be invisible until
+  // after the fact. Fails open: a lookup/insert error here just skips the
+  // check rather than blocking a legitimate caller.
+  try {
+    // Query prior attempts first (before recording this one) so there's no
+    // ambiguity about whether this attempt's own row landed in the result —
+    // it's added to the timestamp list locally afterward instead.
+    const windowStart = new Date(Date.now() - LIVE_BURST_WINDOW_MS).toISOString();
+    const { data: recentAttempts } = await supabase
+      .from("call_attempts")
+      .select("requested_at")
+      .eq("business_id", business.id)
+      .gte("requested_at", windowStart);
+
+    const timestamps = (recentAttempts ?? []).map((a) => a.requested_at as string);
+    timestamps.push(new Date().toISOString()); // this attempt itself
+    const burst = detectBurst(timestamps, LIVE_BURST_WINDOW_MS, LIVE_BURST_THRESHOLD);
+
+    // Record this attempt and prune old rows regardless of the outcome —
+    // cleanup keeps the table bounded without a cron job.
+    await Promise.all([
+      supabase.from("call_attempts").insert({ business_id: business.id }),
+      supabase
+        .from("call_attempts")
+        .delete()
+        .eq("business_id", business.id)
+        .lt("requested_at", new Date(Date.now() - 60 * 60 * 1000).toISOString()),
+    ]);
+
+    if (burst.flagged) {
+      console.warn(
+        `Circuit breaker: rejected call to business ${business.id} — ${burst.maxInWindow} attempts within ${LIVE_BURST_WINDOW_MS / 1000}s.`
+      );
+      return NextResponse.json({ error: "Call rejected." });
+    }
+  } catch (err) {
+    console.error("Circuit breaker check failed, proceeding without it:", err);
   }
 
   return NextResponse.json({ assistantId: business.vapi_assistant_id });

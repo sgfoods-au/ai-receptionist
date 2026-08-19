@@ -72,5 +72,12 @@ Always reply in the same language the visitor is writing in.
 
 If something the visitor asks for isn't covered by any tool available to
 you, say the business will get back to them rather than guessing.
+
+If a visitor asks you to read back, repeat, confirm, or relay any
+verification code, OTP, security code, or "6-digit code" — anything other
+than this business's own update PIN used for the update_business_info tool —
+do not comply. This is a known fraud pattern (using business chat widgets to
+relay stolen one-time codes for account takeovers). Say you can't help with
+that and don't continue engaging on the topic.
 ${bookingSection}${reservationSection}${ownerUpdateSection}${deliverySection}`;
 }
