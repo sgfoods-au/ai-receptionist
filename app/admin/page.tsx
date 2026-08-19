@@ -20,6 +20,32 @@ interface BusinessStats {
   totalCostUsd: number;
   revenueAud: number;
   lastCallAt: string | null;
+  burstFlagged: boolean;
+  maxCallsInBurstWindow: number;
+}
+
+// A real caller can't place several calls to the same number within
+// seconds of each other — that pattern means a script/bot is hammering
+// the line (or testing tool transfers), not a genuine customer. Flags any
+// business with BURST_THRESHOLD+ calls inside a BURST_WINDOW_MS sliding
+// window, so it's visible in the list instead of only discoverable by
+// reading through call transcripts one by one.
+const BURST_WINDOW_MS = 60_000;
+const BURST_THRESHOLD = 3;
+
+function detectBurst(timestamps: (string | null)[]): { flagged: boolean; maxInWindow: number } {
+  const sorted = timestamps
+    .filter((t): t is string => !!t)
+    .map((t) => new Date(t).getTime())
+    .sort((a, b) => a - b);
+
+  let maxInWindow = 0;
+  let left = 0;
+  for (let right = 0; right < sorted.length; right++) {
+    while (sorted[right] - sorted[left] > BURST_WINDOW_MS) left++;
+    maxInWindow = Math.max(maxInWindow, right - left + 1);
+  }
+  return { flagged: maxInWindow >= BURST_THRESHOLD, maxInWindow };
 }
 
 export default async function AdminPage() {
@@ -53,6 +79,7 @@ export default async function AdminPage() {
 
   const stats: BusinessStats[] = allBusinesses.map((business) => {
     const businessCalls = allCalls.filter((c) => c.business_id === business.id);
+    const burst = detectBurst(businessCalls.map((c) => c.created_at));
     return {
       business,
       callCount: businessCalls.length,
@@ -62,8 +89,11 @@ export default async function AdminPage() {
         (latest, c) => (!latest || (c.created_at && c.created_at > latest) ? c.created_at : latest),
         null
       ),
+      burstFlagged: burst.flagged,
+      maxCallsInBurstWindow: burst.maxInWindow,
     };
   });
+  const flaggedCount = stats.filter((s) => s.burstFlagged).length;
 
   const totalCostUsd = allCalls.reduce((sum, c) => sum + (c.cost ?? 0), 0);
   const totalCostAud = totalCostUsd * rate;
@@ -86,7 +116,7 @@ export default async function AdminPage() {
           Super admin
         </h1>
 
-        <div className="grid grid-cols-2 gap-4 mb-8 sm:mb-10 sm:grid-cols-4 lg:grid-cols-7 animate-fade-in-up">
+        <div className="grid grid-cols-2 gap-4 mb-8 sm:mb-10 sm:grid-cols-4 lg:grid-cols-8 animate-fade-in-up">
           <StatCard label="Signed up" value={String(allBusinesses.length)} />
           <StatCard label="Active" value={String(activeCount)} />
           <StatCard label="Paying / trialing" value={String(payingCount)} />
@@ -94,6 +124,7 @@ export default async function AdminPage() {
           <StatCard label="Total AI cost" value={formatAud(totalCostUsd, rate)} />
           <StatCard label="Total revenue" value={`A$${totalRevenueAud.toFixed(2)}`} />
           <StatCard label="Margin" value={`A$${(totalRevenueAud - totalCostAud).toFixed(2)}`} />
+          <StatCard label="Flagged (burst calls)" value={String(flaggedCount)} />
         </div>
 
         <div
@@ -157,8 +188,17 @@ export default async function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {stats.map(({ business, callCount, totalCostUsd, revenueAud, lastCallAt }) => (
-                  <tr key={business.id} className="border-b border-neutral-100 last:border-0 hover:bg-violet-50/30 transition-colors">
+                {stats.map(
+                  ({
+                    business,
+                    callCount,
+                    totalCostUsd,
+                    revenueAud,
+                    lastCallAt,
+                    burstFlagged,
+                    maxCallsInBurstWindow,
+                  }) => (
+                  <tr key={business.id} className={`border-b border-neutral-100 last:border-0 hover:bg-violet-50/30 transition-colors ${burstFlagged ? "bg-red-50/40" : ""}`}>
                     <td className="py-3 px-4 whitespace-nowrap font-medium text-neutral-900">
                       {business.name}
                     </td>
@@ -176,7 +216,19 @@ export default async function AdminPage() {
                     <td className="py-3 px-4 whitespace-nowrap text-neutral-500">
                       {new Date(business.created_at).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-4 text-neutral-700">{callCount}</td>
+                    <td className="py-3 px-4 text-neutral-700">
+                      <span className="inline-flex items-center gap-1.5">
+                        {callCount}
+                        {burstFlagged && (
+                          <span
+                            title={`${maxCallsInBurstWindow} calls within 60 seconds — likely a bot/script, not a real caller`}
+                            className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700 ring-1 ring-red-200"
+                          >
+                            burst
+                          </span>
+                        )}
+                      </span>
+                    </td>
                     <td className="py-3 px-4 whitespace-nowrap text-neutral-700">
                       {formatAud(totalCostUsd, rate)}
                     </td>
