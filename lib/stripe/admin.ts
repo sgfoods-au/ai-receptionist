@@ -52,6 +52,24 @@ export async function removeDiscount(subscriptionId: string): Promise<void> {
   await stripe.subscriptions.update(subscriptionId, { discounts: [] });
 }
 
+/**
+ * Cancels a subscription immediately (not at period end) — used when
+ * suspending an abusive/fraudulent account. The existing
+ * customer.subscription.deleted webhook (app/api/stripe/webhook/route.ts)
+ * syncs subscription_status on the businesses row afterward; already-canceled
+ * subscriptions are treated as success rather than an error.
+ */
+export async function cancelSubscription(subscriptionId: string): Promise<void> {
+  const stripe = getStripeClient();
+  try {
+    await stripe.subscriptions.cancel(subscriptionId);
+  } catch (err) {
+    const alreadyCanceled =
+      err instanceof Error && /already.*(cancel|delete)/i.test(err.message);
+    if (!alreadyCanceled) throw err;
+  }
+}
+
 /** The active discount on a subscription, if any — for display in the admin panel. */
 export async function getActiveDiscount(
   subscriptionId: string
