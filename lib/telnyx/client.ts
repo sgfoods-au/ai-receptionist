@@ -21,6 +21,21 @@ export function isTelnyxConfigured(): boolean {
   return !!process.env.TELNYX_API_KEY;
 }
 
+/**
+ * Telnyx support confirmed managed accounts do NOT inherit the manager
+ * account's ACMA verification — each one needs its own identity + AU
+ * address documents with ~72h validation before it can buy an AU number.
+ * That rules them out for instant signup, so per-tenant managed accounts
+ * stay off unless explicitly enabled (e.g. once a pool of pre-verified
+ * managed accounts exists to hand out at signup). While off, numbers are
+ * purchased directly under the verified manager account and tenant
+ * isolation is carried by the app-level defenses (circuit breaker, burst
+ * flagging, suspend) rather than carrier account boundaries.
+ */
+export function isManagedAccountProvisioningEnabled(): boolean {
+  return process.env.TELNYX_MANAGED_ACCOUNTS_ENABLED === "true";
+}
+
 async function telnyxRequest<T>(path: string, init: RequestInit, apiKey?: string): Promise<T> {
   const res = await fetch(`${TELNYX_BASE_URL}${path}`, {
     ...init,

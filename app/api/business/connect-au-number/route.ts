@@ -7,6 +7,7 @@ import {
 } from "@/lib/twilio/client";
 import {
   isTelnyxConfigured,
+  isManagedAccountProvisioningEnabled,
   createManagedAccount,
   purchaseAustralianNumber as purchaseTelnyxAuNumber,
 } from "@/lib/telnyx/client";
@@ -26,10 +27,13 @@ interface ProvisionedNumber {
  * before after bot traffic on one tenant's number — the reason both
  * providers isolate each business in its own sub-entity where possible):
  *
- *   1. Telnyx managed account — per-tenant isolation, primary path.
- *   2. Telnyx manager account — no per-tenant isolation, but still on the
- *      primary carrier (e.g. if managed accounts turn out to need their own
- *      ACMA verification and can't provision instantly).
+ *   1. Telnyx managed account — per-tenant isolation. OFF by default
+ *      (TELNYX_MANAGED_ACCOUNTS_ENABLED): Telnyx support confirmed each
+ *      managed account needs its own ~72h ACMA verification before it can
+ *      buy an AU number, so this tier can't serve instant signup until a
+ *      pre-verified account pool exists.
+ *   2. Telnyx manager account — the default live path: no per-tenant
+ *      carrier isolation, but instant, on the verified manager account.
  *   3. Twilio subaccount → master — the pre-Telnyx flow, unchanged.
  *
  * Every fallback happens before anything is purchased on the failed tier,
@@ -79,7 +83,7 @@ async function provisionViaTelnyx(
     if (!managedApiKey) managedAccountId = null;
   }
 
-  if (!managedAccountId) {
+  if (!managedAccountId && isManagedAccountProvisioningEnabled()) {
     try {
       const created = await createManagedAccount(`${business.name} — ${business.id}`);
       const { error: credsError } = await admin
