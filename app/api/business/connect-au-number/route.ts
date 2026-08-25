@@ -1,8 +1,197 @@
 import { NextResponse } from "next/server";
 import { getSupabaseSessionClient } from "@/lib/supabase/server-client";
-import { purchaseAustralianNumber, createBusinessSubaccount } from "@/lib/twilio/client";
-import { importTwilioNumber, releaseVapiNumber } from "@/lib/vapi/client";
+import { getSupabaseServerClient } from "@/lib/supabase/client";
+import {
+  purchaseAustralianNumber as purchaseTwilioAuNumber,
+  createBusinessSubaccount,
+} from "@/lib/twilio/client";
+import {
+  isTelnyxConfigured,
+  createManagedAccount,
+  purchaseAustralianNumber as purchaseTelnyxAuNumber,
+} from "@/lib/telnyx/client";
+import { importTwilioNumber, importTelnyxNumber, releaseVapiNumber } from "@/lib/vapi/client";
 import type { Business } from "@/lib/types";
+
+interface ProvisionedNumber {
+  number: string;
+  phoneNumberId: string;
+  telnyxManagedAccountId: string | null;
+  twilioSubaccountSid: string | null;
+}
+
+/**
+ * Provider tiers, most-isolated first. Telnyx is the primary carrier;
+ * Twilio stays as the fallback (its master account was suspended once
+ * before after bot traffic on one tenant's number — the reason both
+ * providers isolate each business in its own sub-entity where possible):
+ *
+ *   1. Telnyx managed account — per-tenant isolation, primary path.
+ *   2. Telnyx manager account — no per-tenant isolation, but still on the
+ *      primary carrier (e.g. if managed accounts turn out to need their own
+ *      ACMA verification and can't provision instantly).
+ *   3. Twilio subaccount → master — the pre-Telnyx flow, unchanged.
+ *
+ * Every fallback happens before anything is purchased on the failed tier,
+ * so no tier change can double-purchase or strand a bought number.
+ */
+async function provisionAuNumber(
+  business: Business,
+  assistantRequestWebhookUrl: string,
+  webhookSecret: string
+): Promise<ProvisionedNumber> {
+  if (isTelnyxConfigured()) {
+    try {
+      return await provisionViaTelnyx(business, assistantRequestWebhookUrl, webhookSecret);
+    } catch (err) {
+      console.error(
+        `Telnyx provisioning failed for business ${business.id}, falling back to Twilio:`,
+        err
+      );
+    }
+  }
+  return provisionViaTwilio(business, assistantRequestWebhookUrl, webhookSecret);
+}
+
+async function provisionViaTelnyx(
+  business: Business,
+  assistantRequestWebhookUrl: string,
+  webhookSecret: string
+): Promise<ProvisionedNumber> {
+  // The managed account's API key is a platform credential (billed to the
+  // manager account), so it lives in the service-role-only
+  // business_provider_credentials table, never on the owner-readable
+  // businesses row.
+  const admin = getSupabaseServerClient();
+
+  let managedAccountId: string | null = business.telnyx_managed_account_id;
+  let managedApiKey: string | null = null;
+
+  if (managedAccountId) {
+    const { data: creds } = await admin
+      .from("business_provider_credentials")
+      .select("telnyx_api_key")
+      .eq("business_id", business.id)
+      .maybeSingle();
+    managedApiKey = (creds?.telnyx_api_key as string | null) ?? null;
+    // An id without a stored key can't be operated on — treat as no managed
+    // account rather than failing the whole Telnyx tier.
+    if (!managedApiKey) managedAccountId = null;
+  }
+
+  if (!managedAccountId) {
+    try {
+      const created = await createManagedAccount(`${business.name} — ${business.id}`);
+      const { error: credsError } = await admin
+        .from("business_provider_credentials")
+        .upsert(
+          {
+            business_id: business.id,
+            telnyx_api_key: created.apiKey,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "business_id" }
+        );
+      // If the key can't be persisted, don't use the managed account at all —
+      // a number bought under it would become unmanageable after this request.
+      if (credsError) throw credsError;
+      managedAccountId = created.id;
+      managedApiKey = created.apiKey;
+    } catch (err) {
+      console.error(
+        `Failed to create a Telnyx managed account for business ${business.id}, purchasing under the manager account instead:`,
+        err
+      );
+      managedAccountId = null;
+      managedApiKey = null;
+    }
+  }
+
+  let number: string;
+  try {
+    ({ number } = await purchaseTelnyxAuNumber(managedApiKey ?? undefined));
+  } catch (err) {
+    // Nothing purchased yet — safe to drop to the manager-account tier,
+    // but only if we were actually on the managed-account tier.
+    if (!managedAccountId) throw err;
+    console.error(
+      `Telnyx managed-account number purchase failed for business ${business.id}, retrying under the manager account:`,
+      err
+    );
+    managedAccountId = null;
+    managedApiKey = null;
+    ({ number } = await purchaseTelnyxAuNumber());
+  }
+
+  const telnyxApiKey = managedApiKey ?? process.env.TELNYX_API_KEY;
+  if (!telnyxApiKey) {
+    throw new Error("Missing TELNYX_API_KEY environment variable.");
+  }
+  const { phoneNumberId } = await importTelnyxNumber(
+    number,
+    assistantRequestWebhookUrl,
+    webhookSecret,
+    telnyxApiKey
+  );
+
+  return {
+    number,
+    phoneNumberId,
+    telnyxManagedAccountId: managedAccountId,
+    twilioSubaccountSid: business.twilio_subaccount_sid,
+  };
+}
+
+async function provisionViaTwilio(
+  business: Business,
+  assistantRequestWebhookUrl: string,
+  webhookSecret: string
+): Promise<ProvisionedNumber> {
+  // Isolate this business's number in its own Twilio subaccount so abuse
+  // traffic on it can't get every other tenant's numbers suspended along
+  // with it — reuse an existing subaccount if this business already has
+  // one, otherwise create one now. Nothing has been purchased at either
+  // step here, so falling back to the shared master account is always safe.
+  let subaccountSid: string | null = business.twilio_subaccount_sid;
+  if (!subaccountSid) {
+    try {
+      const created = await createBusinessSubaccount(`${business.name} — ${business.id}`);
+      subaccountSid = created.sid;
+    } catch (err) {
+      console.error(
+        `Failed to create a Twilio subaccount for business ${business.id}, purchasing under the shared account instead:`,
+        err
+      );
+    }
+  }
+
+  let number: string;
+  try {
+    ({ number } = await purchaseTwilioAuNumber(subaccountSid ?? undefined));
+  } catch (err) {
+    if (!subaccountSid) throw err;
+    console.error(
+      `Subaccount number purchase failed for business ${business.id}, retrying under the shared account:`,
+      err
+    );
+    subaccountSid = null;
+    ({ number } = await purchaseTwilioAuNumber());
+  }
+
+  const { phoneNumberId } = await importTwilioNumber(
+    number,
+    assistantRequestWebhookUrl,
+    webhookSecret,
+    subaccountSid ?? undefined
+  );
+
+  return {
+    number,
+    phoneNumberId,
+    telnyxManagedAccountId: business.telnyx_managed_account_id,
+    twilioSubaccountSid: subaccountSid,
+  };
+}
 
 export async function POST() {
   const supabase = await getSupabaseSessionClient();
@@ -45,46 +234,10 @@ export async function POST() {
   }
 
   try {
-    // Isolate this business's number in its own Twilio subaccount so abuse
-    // traffic on it can't get every other tenant's numbers suspended along
-    // with it — reuse an existing subaccount if this business already has
-    // one (e.g. replacing a number later), otherwise create one now.
-    // Neither step here has purchased anything yet, so on any failure it's
-    // always safe to fall back to the shared master account.
-    let subaccountSid: string | null = business.twilio_subaccount_sid;
-    if (!subaccountSid) {
-      try {
-        const created = await createBusinessSubaccount(`${business.name} — ${business.id}`);
-        subaccountSid = created.sid;
-      } catch (err) {
-        console.error(
-          `Failed to create a Twilio subaccount for business ${business.id}, purchasing under the shared account instead:`,
-          err
-        );
-      }
-    }
-
-    let number: string;
-    try {
-      ({ number } = await purchaseAustralianNumber(subaccountSid ?? undefined));
-    } catch (err) {
-      // Nothing was purchased yet, so it's still safe to fall back here —
-      // but only for the subaccount path; a failure with no subaccount to
-      // fall back from is a real error.
-      if (!subaccountSid) throw err;
-      console.error(
-        `Subaccount number purchase failed for business ${business.id}, retrying under the shared account:`,
-        err
-      );
-      subaccountSid = null;
-      ({ number } = await purchaseAustralianNumber());
-    }
-
-    const { phoneNumberId } = await importTwilioNumber(
-      number,
+    const provisioned = await provisionAuNumber(
+      business,
       `${appBaseUrl}/api/vapi/assistant-request`,
-      webhookSecret,
-      subaccountSid ?? undefined
+      webhookSecret
     );
 
     const oldPhoneNumberId = business.vapi_phone_number_id;
@@ -98,9 +251,10 @@ export async function POST() {
     const { data: updated, error: updateError } = await supabase
       .from("businesses")
       .update({
-        vapi_phone_number_id: phoneNumberId,
-        vapi_phone_number: number,
-        twilio_subaccount_sid: subaccountSid,
+        vapi_phone_number_id: provisioned.phoneNumberId,
+        vapi_phone_number: provisioned.number,
+        twilio_subaccount_sid: provisioned.twilioSubaccountSid,
+        telnyx_managed_account_id: provisioned.telnyxManagedAccountId,
         updated_at: new Date().toISOString(),
       })
       .eq("id", business.id)

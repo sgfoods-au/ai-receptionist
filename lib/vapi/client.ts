@@ -436,6 +436,38 @@ export async function importTwilioNumber(
   return { phoneNumberId: imported.id, number: imported.number };
 }
 
+/**
+ * Imports an already-purchased Telnyx number into Vapi — the Telnyx
+ * counterpart of importTwilioNumber above, with the same dynamic
+ * assistant-request webhook wiring (spam rejection + per-call assistant
+ * lookup) instead of a fixed assistantId. The API key passed here is the
+ * one for whichever Telnyx account owns the number — a business's managed
+ * account key, or the shared manager key.
+ *
+ * NOTE: Vapi's exact field name for the Telnyx credential (telnyxApiKey is
+ * assumed, mirroring twilioAccountSid/twilioAuthToken) could not be
+ * verified live — docs.vapi.ai/api.vapi.ai were unreachable from this dev
+ * environment. A rejection surfaces to the caller as an import failure,
+ * same as any other; nothing proceeds as if the number were live.
+ */
+export async function importTelnyxNumber(
+  number: string,
+  assistantRequestWebhookUrl: string,
+  webhookSecret: string,
+  telnyxApiKey: string
+): Promise<{ phoneNumberId: string; number: string }> {
+  const imported = await vapiRequest<{ id: string; number: string }>("/phone-number", {
+    method: "POST",
+    body: JSON.stringify({
+      provider: "telnyx",
+      number,
+      telnyxApiKey,
+      server: { url: assistantRequestWebhookUrl, secret: webhookSecret },
+    }),
+  });
+  return { phoneNumberId: imported.id, number: imported.number };
+}
+
 /** Detaches/deletes a phone number from Vapi, e.g. when replacing it with a different number. */
 export async function releaseVapiNumber(phoneNumberId: string): Promise<void> {
   await vapiRequest<void>(`/phone-number/${phoneNumberId}`, { method: "DELETE" });

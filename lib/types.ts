@@ -145,6 +145,11 @@ export interface Business {
   google_calendar_email: string | null;
   update_pin: string | null;
   twilio_subaccount_sid: string | null;
+  // The managed account's API key deliberately does NOT live on this row —
+  // owners can read their own businesses row via RLS, and that key is a
+  // platform credential (billed to Oviflow's Telnyx manager account). It's
+  // in business_provider_credentials, service-role only.
+  telnyx_managed_account_id: string | null;
   delivery_integration: DeliveryIntegration | null;
   chat_enabled: boolean;
   admin_overrides: AdminOverrides;

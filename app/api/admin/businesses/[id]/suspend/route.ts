@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/client";
 import { requireAdmin } from "@/lib/admin";
 import { cancelSubscription } from "@/lib/stripe/admin";
+import { disableManagedAccount } from "@/lib/telnyx/client";
 import { releaseVapiNumber } from "@/lib/vapi/client";
 import type { Business } from "@/lib/types";
 
@@ -20,10 +21,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const supabase = getSupabaseServerClient();
   const { data } = await supabase
     .from("businesses")
-    .select("stripe_subscription_id, vapi_phone_number_id")
+    .select("stripe_subscription_id, vapi_phone_number_id, telnyx_managed_account_id")
     .eq("id", id)
     .maybeSingle();
-  const business = data as Pick<Business, "stripe_subscription_id" | "vapi_phone_number_id"> | null;
+  const business = data as Pick<
+    Business,
+    "stripe_subscription_id" | "vapi_phone_number_id" | "telnyx_managed_account_id"
+  > | null;
 
   if (!business) {
     return NextResponse.json({ error: "Business not found." }, { status: 404 });
@@ -45,6 +49,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       if (!/\b404\b/.test(message)) errors.push(`Vapi: ${message}`);
+    }
+  }
+
+  // Stronger than releasing one number: disabling the Telnyx managed
+  // account shuts down every Telnyx resource this tenant has.
+  if (business.telnyx_managed_account_id) {
+    try {
+      await disableManagedAccount(business.telnyx_managed_account_id);
+    } catch (err) {
+      errors.push(`Telnyx: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
